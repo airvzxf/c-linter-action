@@ -2,22 +2,22 @@
 #set -e
 #set -xv
 
+echo ""
+echo "-------- v1.0.1.1 --------"
+
+echo ""
 echo "=== Environment variables ==="
-echo "INPUT_PROJECT_PATH:     ${INPUT_PROJECT_PATH}"
-echo "INPUT_CPPCHECK_OPTIONS: ${INPUT_CPPCHECK_OPTIONS}"
-echo ""
-echo "=== Current location ==="
-pwd
-echo ""
-echo "=== List this directory ==="
-ls -lha .
+echo "INPUT_PROJECT_PATH:      ${INPUT_PROJECT_PATH}"
+echo "INPUT_CPPCHECK_OPTIONS:  ${INPUT_CPPCHECK_OPTIONS}"
+echo "GITHUB_EVENT_NAME:       ${GITHUB_EVENT_NAME}"
 echo ""
 echo "=== Print Environment variables ==="
 printenv
 
-echo ""
-echo "=== GitHub Event: Push ==="
 if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+  echo ""
+  echo "=== GitHub Event: Push ==="
+
   echo ""
   echo "=== Get C/C++ files ==="
   cd "${INPUT_PROJECT_PATH}" || (
@@ -66,9 +66,10 @@ if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
 
 fi
 
-echo ""
-echo "=== GitHub Event: Pull request ==="
 if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+  echo ""
+  echo "=== GitHub Event: Pull request ==="
+
   if [[ -z $GITHUB_TOKEN ]]; then
     echo "ERROR: The GITHUB_TOKEN is required."
     exit 1
