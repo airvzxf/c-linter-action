@@ -13,6 +13,9 @@ RUN apt --assume-yes install \
         curl clang-tidy cmake jq clang cppcheck clang-format
 
 WORKDIR /build
-ADD runchecks.sh /entrypoint.sh
+COPY entry_point.sh /entrypoint.sh
+RUN pwd
+RUN ls -lha .
 COPY . .
+RUN ls -lha .
 CMD ["bash", "/entrypoint.sh"]
