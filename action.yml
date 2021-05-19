@@ -1,6 +1,6 @@
 name: C-Linter
-description: >
-  C and C++ code linter with clang-tidy, clang-format, and cppcheck.
+description: |
+  C/C++: clang-tidy, clang-format, and cppcheck.
   Automatically checks pull requests changes and posts the comment with result.
 author: Israel Roldan [airvzxf]
 branding:
