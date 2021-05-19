@@ -82,31 +82,6 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   fi
 
   echo ""
-  echo "=== pwd ==="
-  pwd
-
-  echo ""
-  echo "=== List directories ==="
-  echo "GITHUB_WORKSPACE: ${GITHUB_WORKSPACE}"
-  ls -lha "${GITHUB_WORKSPACE}"
-  echo "HOME: ${HOME}"
-  ls -lha "${HOME}"
-  echo "GITHUB_ENV: ${GITHUB_ENV}"
-  ls -lhaR "${GITHUB_ENV}"
-  echo "GITHUB_PATH: ${GITHUB_PATH}"
-  ls -lha "${GITHUB_PATH}"
-
-  echo ""
-  echo "=== List GITHUB_EVENT_PATH ==="
-  ls -lha -R "${GITHUB_EVENT_PATH}"
-
-  echo ""
-  echo "=== Display GITHUB_EVENT_PATH ==="
-  cat "${GITHUB_EVENT_PATH}"
-
-  exit 123
-
-  echo ""
   echo "=== Get pull request files link ==="
   FILES_LINK=$(jq -r '.pull_request._links.self.href' "${GITHUB_EVENT_PATH}")/files
   echo "Files link = ${FILES_LINK}"
@@ -115,6 +90,12 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   echo "=== Get files ==="
   curl "${FILES_LINK}" > files.json
   FILES_URLS_STRING=$(jq -r '.[].raw_url' files.json)
+
+  echo ""
+  echo "=== Display files.json ==="
+  cat files.json
+
+  exit 123
 
   readarray -t URLS <<< "${FILES_URLS_STRING}"
 
