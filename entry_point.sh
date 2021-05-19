@@ -3,7 +3,7 @@
 #set -xv
 
 echo ""
-echo "-------- v1.0.1.1 --------"
+echo "-------- v1.0.1.2 --------"
 
 echo ""
 echo "=== Environment variables ==="
