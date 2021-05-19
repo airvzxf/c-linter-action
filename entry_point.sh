@@ -3,7 +3,7 @@
 #set -xv
 
 echo ""
-echo "-------- v1.0.1.3 --------"
+echo "-------- v1.0.1.4 --------"
 
 echo ""
 echo "=== Environment variables ==="
@@ -80,6 +80,16 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
     echo "ERROR: The GITHUB_TOKEN is required."
     exit 1
   fi
+
+  echo ""
+  echo "=== List GITHUB_EVENT_PATH ==="
+  ls -lha -R "${GITHUB_EVENT_PATH}"
+
+  echo ""
+  echo "=== Display GITHUB_EVENT_PATH ==="
+  cat "${GITHUB_EVENT_PATH}"
+
+  exit 123
 
   echo ""
   echo "=== Get pull request files link ==="
