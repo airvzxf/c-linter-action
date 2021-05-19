@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+#set -e
 
 echo "=== Environment variables ==="
 echo "INPUT_PROJECT_PATH:     ${INPUT_PROJECT_PATH}"
