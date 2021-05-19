@@ -26,10 +26,36 @@ FILES=$(find ./ -type f -regextype posix-extended -iregex '.*\.(c|h)?(\+\+|c|p|p
 echo "FILES: ${FILES}"
 
 echo ""
+echo "=== Processing #1 ==="
+while IFS= read -r line; do # Whitespace-safe EXCEPT newlines
+  echo "line #1: ${line}"
+done < "${FILES}"
+
+echo ""
+echo "=== Processing #2 ==="
+while IFS= read -r line; do # Whitespace-safe EXCEPT newlines
+  echo "line #2: ${line}"
+done < "${FILES[@]}"
+
+echo ""
+echo "=== Processing #3 ==="
+"${FILES}" \
+  | while IFS= read -r -d '' line; do
+    echo "line #3: ${line}"
+  done
+
+echo ""
+echo "=== Processing #4 ==="
+"${FILES[@]}" \
+  | while IFS= read -r -d '' line; do
+    echo "line #4: ${line}"
+  done
+
+echo ""
 echo "=== Performing checkup ==="
 clang-tidy --version
 for FILE in "${FILES[@]}"; do
-  echo "FILE: ${FILE}"
+  echo "FILE: ---${FILE}---"
   clang-tidy "${FILE}" -checks=boost-*,bugprone-*,performance-*,readability-*,portability-*,modernize-*,clang-analyzer-cplusplus-*,clang-analyzer-*,cppcoreguidelines-* >> clang-tidy-report.txt
   clang-format --dry-run -Werror "${FILE}" || echo "File: $filename not formatted!" >> clang-format-report.txt
 done
