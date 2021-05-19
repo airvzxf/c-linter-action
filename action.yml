@@ -1,0 +1,11 @@
+name: C-Linter
+description: >
+  C and C++ code linter with clang-tidy, clang-format, and cppcheck.
+  Automatically checks pull requests changes and posts the comment with result.
+author: Israel Roldan [airvzxf]
+branding:
+  icon: check-square
+  color: green
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
