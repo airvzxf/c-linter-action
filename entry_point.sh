@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #set -e
-set -xv
+#set -xv
 
 echo "=== Environment variables ==="
 echo "INPUT_PROJECT_PATH:     ${INPUT_PROJECT_PATH}"
@@ -15,6 +15,7 @@ echo ""
 echo "=== Print Environment variables ==="
 printenv
 
+echo "=== GitHub Event: Push ==="
 if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
   echo ""
   echo "=== Get C/C++ files ==="
@@ -42,13 +43,13 @@ if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
     echo "FILE: ---${FILE}---"
     clang-tidy "${FILE}" -checks=boost-*,bugprone-*,performance-*,readability-*,portability-*,modernize-*,clang-analyzer-cplusplus-*,clang-analyzer-*,cppcoreguidelines-* >> clang-tidy-report.txt
     clang-format --dry-run -Werror "${FILE}" || echo "File: ${FILE} not formatted!" >> clang-format-report.txt
-    cppcheck --enable=all --std=c++11 --language=c++ "${FILE}" #>> cppcheck-report-individual.txt
+    cppcheck --enable=all --std=c++11 --language=c++ "${FILE}" >> cppcheck-report-individual.txt
   done < c_files.txt
   cppcheck --enable=all --std=c++11 --language=c++ --output-file=cppcheck-report.txt *.c *.h *.cpp *.hpp *.C *.cc *.CPP *.c++ *.cp *.cxx
 
   echo ""
   echo "=== Report: Tidy ==="
-  cat clang-tidy-report.txt
+  ls -lha clang-tidy-report.txt
 
   echo ""
   echo "=== Report: Format ==="
@@ -56,15 +57,7 @@ if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
 
   echo ""
   echo "=== Report: CPP Check #1 ==="
-  #cat cppcheck-report-individual.txt
-
-  echo ""
-  echo "=== CMake method ==="
-  cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ./"${INPUT_PROJECT_PATH}"
-  ls -lha .
-  cppcheck --enable=all --std=c++11 --language=c++ --project=compile_commands.json --output-file=cppcheck-report-project.txt
-  ls -lha .
-  cat cppcheck-report-project.txt
+  cat cppcheck-report-individual.txt
 
   echo ""
   echo "=== Report: CPP Check #2 ==="
@@ -72,6 +65,7 @@ if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
 
 fi
 
+echo "=== GitHub Event: Pull request ==="
 if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   if [[ -z $GITHUB_TOKEN ]]; then
     echo "ERROR: The GITHUB_TOKEN is required."
