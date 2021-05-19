@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 #set -e
+set -xv
 
 echo "=== Environment variables ==="
 echo "INPUT_PROJECT_PATH:     ${INPUT_PROJECT_PATH}"
@@ -14,134 +15,142 @@ echo ""
 echo "=== Print Environment variables ==="
 printenv
 
-echo ""
-echo "=== Get C/C++ files ==="
-cd "${INPUT_PROJECT_PATH}" || (
-  echo "Error: The project path (${INPUT_PROJECT_PATH}) not exists."
-  ls -lha "${INPUT_PROJECT_PATH}/.."
-  exit 1
-)
-# *.c *.h *.cpp *.hpp *.cc *.c++ *.cp *.cxx
-FILES=$(find ./ -type f -regextype posix-extended -iregex '.*\.(c|h)?(\+\+|c|p|pp|xx)')
-echo "FILES: ${FILES}"
-echo "${FILES}" > c_files.txt
-echo "-----"
-cat c_files.txt
+if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+  echo ""
+  echo "=== Get C/C++ files ==="
+  cd "${INPUT_PROJECT_PATH}" || (
+    echo "Error: The project path (${INPUT_PROJECT_PATH}) not exists."
+    ls -lha "${INPUT_PROJECT_PATH}/.."
+    exit 1
+  )
+  # *.c *.h *.cpp *.hpp *.cc *.c++ *.cp *.cxx
+  FILES=$(find ./ -type f -regextype posix-extended -iregex '.*\.(c|h)?(\+\+|c|p|pp|xx)')
+  echo "FILES: ${FILES}"
+  echo "${FILES}" > c_files.txt
+  echo "-----"
+  cat c_files.txt
 
-echo ""
-echo "=== Processing #1 ==="
-while IFS= read -r line; do
-  echo "line #1: ${line}"
-done < c_files.txt
+  echo ""
+  echo "=== Processing #1 ==="
+  while IFS= read -r line; do
+    echo "line #1: ${line}"
+  done < c_files.txt
 
-echo ""
-echo "=== Performing checkup ==="
-while IFS= read -r FILE; do
-  echo "FILE: ---${FILE}---"
-  clang-tidy "${FILE}" -checks=boost-*,bugprone-*,performance-*,readability-*,portability-*,modernize-*,clang-analyzer-cplusplus-*,clang-analyzer-*,cppcoreguidelines-* >> clang-tidy-report.txt
-  clang-format --dry-run -Werror "${FILE}" || echo "File: ${FILE} not formatted!" >> clang-format-report.txt
-  cppcheck --enable=all --std=c++11 --language=c++ "${FILE}" #>> cppcheck-report-individual.txt
-done < c_files.txt
-cppcheck --enable=all --std=c++11 --language=c++ --output-file=cppcheck-report.txt *.c *.h *.cpp *.hpp *.C *.cc *.CPP *.c++ *.cp *.cxx
+  echo ""
+  echo "=== Performing checkup ==="
+  while IFS= read -r FILE; do
+    echo "FILE: ---${FILE}---"
+    clang-tidy "${FILE}" -checks=boost-*,bugprone-*,performance-*,readability-*,portability-*,modernize-*,clang-analyzer-cplusplus-*,clang-analyzer-*,cppcoreguidelines-* >> clang-tidy-report.txt
+    clang-format --dry-run -Werror "${FILE}" || echo "File: ${FILE} not formatted!" >> clang-format-report.txt
+    cppcheck --enable=all --std=c++11 --language=c++ "${FILE}" #>> cppcheck-report-individual.txt
+  done < c_files.txt
+  cppcheck --enable=all --std=c++11 --language=c++ --output-file=cppcheck-report.txt *.c *.h *.cpp *.hpp *.C *.cc *.CPP *.c++ *.cp *.cxx
 
-echo ""
-echo "=== Report: Tidy ==="
-cat clang-tidy-report.txt
+  echo ""
+  echo "=== Report: Tidy ==="
+  cat clang-tidy-report.txt
 
-echo ""
-echo "=== Report: Format ==="
-cat clang-format-report.txt
+  echo ""
+  echo "=== Report: Format ==="
+  cat clang-format-report.txt
 
-echo ""
-echo "=== Report: CPP Check #1 ==="
-#cat cppcheck-report-individual.txt
+  echo ""
+  echo "=== Report: CPP Check #1 ==="
+  #cat cppcheck-report-individual.txt
 
-echo ""
-echo "=== CMake method ==="
-cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON "${INPUT_PROJECT_PATH}"
-ls -lha .
-cppcheck --enable=all --std=c++11 --language=c++ --project=compile_commands.json --output-file=cppcheck-report-project.txt
-ls -lha .
-cat cppcheck-report-project.txt
+  echo ""
+  echo "=== CMake method ==="
+  cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ./"${INPUT_PROJECT_PATH}"
+  ls -lha .
+  cppcheck --enable=all --std=c++11 --language=c++ --project=compile_commands.json --output-file=cppcheck-report-project.txt
+  ls -lha .
+  cat cppcheck-report-project.txt
 
-echo ""
-echo "=== Report: CPP Check #2 ==="
-cat cppcheck-report.txt
+  echo ""
+  echo "=== Report: CPP Check #2 ==="
+  cat cppcheck-report.txt
 
-exit 123
-
-if [[ -z $GITHUB_TOKEN ]]; then
-  echo "ERROR: The GITHUB_TOKEN is required."
-  exit 1
 fi
 
-# Add validation to check the GITHUB_EVENT_NAME is pull_request
-FILES_LINK=$(jq -r '.pull_request._links.self.href' "$GITHUB_EVENT_PATH")/files
-echo "Files = $FILES_LINK"
+if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+  if [[ -z $GITHUB_TOKEN ]]; then
+    echo "ERROR: The GITHUB_TOKEN is required."
+    exit 1
+  fi
 
-curl $FILES_LINK > files.json
-FILES_URLS_STRING=$(jq -r '.[].raw_url' files.json)
+  # Add validation to check the GITHUB_EVENT_NAME is pull_request
+  FILES_LINK=$(jq -r '.pull_request._links.self.href' "$GITHUB_EVENT_PATH")/files
+  echo "Files = $FILES_LINK"
 
-readarray -t URLS <<< "$FILES_URLS_STRING"
+  curl "$FILES_LINK" > files.json
+  FILES_URLS_STRING=$(jq -r '.[].raw_url' files.json)
 
-echo "File names: $URLS"
+  readarray -t URLS <<< "$FILES_URLS_STRING"
 
-mkdir files
-cd files
-for i in "${URLS[@]}"; do
-  echo "Downloading $i"
-  curl -LOk --remote-name $i
-done
+  echo "File names: $URLS"
+  echo "File names: " "${URLS[@]}"
 
-echo "Files downloaded!"
-echo "Performing checkup:"
-clang-tidy --version
+  mkdir -p files
+  cd files || (
+    echo "ERROR: The files directory is not accesible."
+    ls -lha .
+    exit 1
+  )
+  for i in "${URLS[@]}"; do
+    echo "Downloading $i"
+    curl -LOk --remote-name $i
+  done
 
-# clang-format --style=llvm -i *.c *.h *.cpp *.hpp *.C *.cc *.CPP *.c++ *.cp *.cxx > clang-format-report.txt
-for i in "${URLS[@]}"; do
-  filename=$(basename $i)
-  clang-tidy $filename -checks=boost-*,bugprone-*,performance-*,readability-*,portability-*,modernize-*,clang-analyzer-cplusplus-*,clang-analyzer-*,cppcoreguidelines-* >> clang-tidy-report.txt
-  clang-format --dry-run -Werror $filename || echo "File: $filename not formatted!" >> clang-format-report.txt
-done
+  echo "Files downloaded!"
+  echo "Performing checkup:"
+  clang-tidy --version
 
-cppcheck --enable=all --std=c++11 --language=c++ --output-file=cppcheck-report.txt *.c *.h *.cpp *.hpp *.C *.cc *.CPP *.c++ *.cp *.cxx
+  # clang-format --style=llvm -i *.c *.h *.cpp *.hpp *.C *.cc *.CPP *.c++ *.cp *.cxx > clang-format-report.txt
+  for i in "${URLS[@]}"; do
+    filename=$(basename $i)
+    clang-tidy $filename -checks=boost-*,bugprone-*,performance-*,readability-*,portability-*,modernize-*,clang-analyzer-cplusplus-*,clang-analyzer-*,cppcoreguidelines-* >> clang-tidy-report.txt
+    clang-format --dry-run -Werror $filename || echo "File: $filename not formatted!" >> clang-format-report.txt
+  done
 
-PAYLOAD_TIDY=$(cat clang-tidy-report.txt)
-PAYLOAD_FORMAT=$(cat clang-format-report.txt)
-PAYLOAD_CPPCHECK=$(cat cppcheck-report.txt)
-COMMENTS_URL=$(cat $GITHUB_EVENT_PATH | jq -r .pull_request.comments_url)
+  cppcheck --enable=all --std=c++11 --language=c++ --output-file=cppcheck-report.txt *.c *.h *.cpp *.hpp *.C *.cc *.CPP *.c++ *.cp *.cxx
 
-echo $COMMENTS_URL
-echo "Clang-tidy errors:"
-echo $PAYLOAD_TIDY
-echo "Clang-format errors:"
-echo $PAYLOAD_FORMAT
-echo "Cppcheck errors:"
-echo $PAYLOAD_CPPCHECK
+  PAYLOAD_TIDY=$(cat clang-tidy-report.txt)
+  PAYLOAD_FORMAT=$(cat clang-format-report.txt)
+  PAYLOAD_CPPCHECK=$(cat cppcheck-report.txt)
+  COMMENTS_URL=$(cat $GITHUB_EVENT_PATH | jq -r .pull_request.comments_url)
 
-if [ "$PAYLOAD_TIDY" != "" ]; then
-  OUTPUT=$'**CLANG-TIDY WARNINGS**:\n'
-  OUTPUT+=$'\n```\n'
-  OUTPUT+="$PAYLOAD_TIDY"
-  OUTPUT+=$'\n```\n'
+  echo $COMMENTS_URL
+  echo "Clang-tidy errors:"
+  echo $PAYLOAD_TIDY
+  echo "Clang-format errors:"
+  echo $PAYLOAD_FORMAT
+  echo "Cppcheck errors:"
+  echo $PAYLOAD_CPPCHECK
+
+  if [ "$PAYLOAD_TIDY" != "" ]; then
+    OUTPUT=$'**CLANG-TIDY WARNINGS**:\n'
+    OUTPUT+=$'\n```\n'
+    OUTPUT+="$PAYLOAD_TIDY"
+    OUTPUT+=$'\n```\n'
+  fi
+
+  if [ "$PAYLOAD_FORMAT" != "" ]; then
+    OUTPUT=$'**CLANG-FORMAT WARNINGS**:\n'
+    OUTPUT+=$'\n```\n'
+    OUTPUT+="$PAYLOAD_FORMAT"
+    OUTPUT+=$'\n```\n'
+  fi
+
+  if [ "$PAYLOAD_CPPCHECK" != "" ]; then
+    OUTPUT+=$'\n**CPPCHECK WARNINGS**:\n'
+    OUTPUT+=$'\n```\n'
+    OUTPUT+="$PAYLOAD_CPPCHECK"
+    OUTPUT+=$'\n```\n'
+  fi
+
+  echo "OUTPUT is: \n $OUTPUT"
+
+  PAYLOAD=$(echo '{}' | jq --arg body "$OUTPUT" '.body = $body')
+
+  curl -s -S -H "Authorization: token $GITHUB_TOKEN" --header "Content-Type: application/vnd.github.VERSION.text+json" --data "$PAYLOAD" "$COMMENTS_URL"
 fi
-
-if [ "$PAYLOAD_FORMAT" != "" ]; then
-  OUTPUT=$'**CLANG-FORMAT WARNINGS**:\n'
-  OUTPUT+=$'\n```\n'
-  OUTPUT+="$PAYLOAD_FORMAT"
-  OUTPUT+=$'\n```\n'
-fi
-
-if [ "$PAYLOAD_CPPCHECK" != "" ]; then
-  OUTPUT+=$'\n**CPPCHECK WARNINGS**:\n'
-  OUTPUT+=$'\n```\n'
-  OUTPUT+="$PAYLOAD_CPPCHECK"
-  OUTPUT+=$'\n```\n'
-fi
-
-echo "OUTPUT is: \n $OUTPUT"
-
-PAYLOAD=$(echo '{}' | jq --arg body "$OUTPUT" '.body = $body')
-
-curl -s -S -H "Authorization: token $GITHUB_TOKEN" --header "Content-Type: application/vnd.github.VERSION.text+json" --data "$PAYLOAD" "$COMMENTS_URL"
