@@ -15,6 +15,7 @@ echo ""
 echo "=== Print Environment variables ==="
 printenv
 
+echo ""
 echo "=== GitHub Event: Push ==="
 if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
   echo ""
@@ -45,7 +46,7 @@ if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
     clang-format --dry-run -Werror "${FILE}" || echo "File: ${FILE} not formatted!" >> clang-format-report.txt
     cppcheck --enable=all --std=c++11 --language=c++ "${FILE}" >> cppcheck-report-individual.txt
   done < c_files.txt
-  cppcheck --enable=all --std=c++11 --language=c++ --output-file=cppcheck-report.txt *.c *.h *.cpp *.hpp *.C *.cc *.CPP *.c++ *.cp *.cxx
+  cppcheck --enable=all --std=c++11 --language=c++ --output-file=cppcheck-report.txt "${INPUT_PROJECT_PATH}"/*.c "${INPUT_PROJECT_PATH}"/*.h "${INPUT_PROJECT_PATH}"/*.cpp "${INPUT_PROJECT_PATH}"/*.hpp "${INPUT_PROJECT_PATH}"/*.C "${INPUT_PROJECT_PATH}"/*.cc "${INPUT_PROJECT_PATH}"/*.CPP "${INPUT_PROJECT_PATH}"/*.c++ "${INPUT_PROJECT_PATH}"/*.cp "${INPUT_PROJECT_PATH}"/*.cxx
 
   echo ""
   echo "=== Report: Tidy ==="
@@ -65,6 +66,7 @@ if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
 
 fi
 
+echo ""
 echo "=== GitHub Event: Pull request ==="
 if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   if [[ -z $GITHUB_TOKEN ]]; then
