@@ -11,9 +11,6 @@ echo "INPUT_PROJECT_PATH:      ${INPUT_PROJECT_PATH}"
 echo "INPUT_CHECK_ALL_FILES:   ${INPUT_CHECK_ALL_FILES}"
 echo "GITHUB_EVENT_NAME:       ${GITHUB_EVENT_NAME}"
 echo "INPUT_CPPCHECK_OPTIONS:  ${INPUT_CPPCHECK_OPTIONS}"
-echo ""
-echo "=== Print Environment variables ==="
-printenv
 
 if [ "${INPUT_CHECK_ALL_FILES}" = "true" ]; then
   echo ""
@@ -76,27 +73,26 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   echo ""
   echo "=== GitHub Event: Pull request ==="
 
-  ls -lhaR .
-
   if [[ -z ${GITHUB_TOKEN} ]]; then
     echo "ERROR: The GITHUB_TOKEN is required."
     exit 1
   fi
 
   echo ""
-  echo "=== Get pull request files link ==="
+  echo "=== Get committed files in JSON format ==="
   GITHUB_FILES_JSON=$(jq -r '.pull_request._links.self.href' "${GITHUB_EVENT_PATH}")/files
   echo "GitHub files in JSON: ${GITHUB_FILES_JSON}"
 
   echo ""
-  echo "=== Get files ==="
-  curl "${GITHUB_FILES_JSON}" > files.json
-  FILES_LIST=$(jq -r '.[].filename' files.json)
-  rm -f files.json
+  echo "=== Get committed files ==="
+  curl "${GITHUB_FILES_JSON}" > github_files.json
+  FILES_LIST=$(jq -r '.[].filename' github_files.json)
+  echo "${FILES_LIST}" > committed_files.txt
+  rm -f github_files.json
 
   echo ""
   echo "=== Performing checkup ==="
-  for FILE in "${FILES_LIST[@]}"; do
+  while IFS= read -r FILE; do
     echo ""
     echo "FILE: ${FILE}"
     if [[ ! ${FILE,,} =~ .*\.(c|h)?(\+\+|c|p|pp|xx) ]]; then
@@ -105,7 +101,8 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
     fi
     clang-tidy "${FILE}" -checks=boost-*,bugprone-*,performance-*,readability-*,portability-*,modernize-*,clang-analyzer-cplusplus-*,clang-analyzer-*,cppcoreguidelines-* >> clang-tidy-report.txt
     clang-format --dry-run -Werror "${FILE}" || echo "File: ${FILE} not formatted!" >> clang-format-report.txt
-  done
+  done < committed_files.txt
+  rm -f committed_files.json
 
 #  echo ""
 #  echo "Running cppcheck:"
