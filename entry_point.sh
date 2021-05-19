@@ -30,32 +30,18 @@ cat c_files.txt
 
 echo ""
 echo "=== Processing #1 ==="
-while IFS= read -r line; do # Whitespace-safe EXCEPT newlines
+while IFS= read -r line; do
   echo "line #1: ${line}"
 done < c_files.txt
 
 echo ""
-echo "=== Processing #3 ==="
-echo "${FILES}" \
-  | while IFS= read -r -d '' line; do
-    echo "line #3: ${line}"
-  done
-
-echo ""
-echo "=== Processing #4 ==="
-echo "${FILES[@]}" \
-  | while IFS= read -r -d '' line; do
-    echo "line #4: ${line}"
-  done
-
-echo ""
 echo "=== Performing checkup ==="
 clang-tidy --version
-for FILE in "${FILES[@]}"; do
+while IFS= read -r FILE; do
   echo "FILE: ---${FILE}---"
   clang-tidy "${FILE}" -checks=boost-*,bugprone-*,performance-*,readability-*,portability-*,modernize-*,clang-analyzer-cplusplus-*,clang-analyzer-*,cppcoreguidelines-* >> clang-tidy-report.txt
   clang-format --dry-run -Werror "${FILE}" || echo "File: $filename not formatted!" >> clang-format-report.txt
-done
+done < c_files.txt
 #cppcheck --enable=all --std=c++11 --language=c++ --output-file=cppcheck-report.txt *.c *.h *.cpp *.hpp *.C *.cc *.CPP *.c++ *.cp *.cxx
 
 echo ""
