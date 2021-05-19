@@ -13,6 +13,7 @@ on:
 
 jobs:
   c-linter:
+    name: Analyze C/C++ code
     runs-on: ubuntu-latest
 
     env:
@@ -23,5 +24,5 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Run C-Linter
-        uses: airvzxf/c-linter-action@master
+        uses: airvzxf/c-linter-action@main
 ```

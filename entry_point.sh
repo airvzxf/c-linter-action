@@ -75,6 +75,7 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
     exit 1
   fi
 
+  echo ""
   echo "=== Get pull request files ==="
   FILES_LINK=$(jq -r '.pull_request._links.self.href' "${GITHUB_EVENT_PATH}")/files
   echo "Files = ${FILES_LINK}"
@@ -93,6 +94,7 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
     exit 1
   )
 
+  echo ""
   echo "=== Download pull request files ==="
   for URL in "${URLS[@]}"; do
     echo "Downloading ${URL}"
@@ -100,24 +102,22 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   done
   ls -lha .
 
+  echo ""
   echo "=== Performing checkup ==="
   for URL in "${URLS[@]}"; do
+    echo "URL: ${URL}"
     FILE_NAME=$(basename "${URL}")
+    echo "FILE_NAME: ${FILE_NAME}"
+    # '.*\.(c|h)?(\+\+|c|p|pp|xx)'
+    if [[ ! ${FILE_NAME} =~ .*\.(c|h)?(\+\+|c|p|pp|xx) ]]; then
+      echo "BAD: The file is not matching with the C/C++ files."
+      continue
+    fi
     clang-tidy "${FILE_NAME}" -checks=boost-*,bugprone-*,performance-*,readability-*,portability-*,modernize-*,clang-analyzer-cplusplus-*,clang-analyzer-*,cppcoreguidelines-* >> clang-tidy-report.txt
     clang-format --dry-run -Werror "${FILE_NAME}" || echo "File: ${FILE_NAME} not formatted!" >> clang-format-report.txt
   done
 
   cppcheck --enable=all --std=c++11 --language=c++ --output-file=cppcheck-report.txt *.c *.h *.cpp *.hpp *.C *.cc *.CPP *.c++ *.cp *.cxx
-
-  echo "CLang Tidy style:"
-  clang-tidy --version
-  echo "-----------------"
-  clang-tidy --dump-config
-  echo "-----------------"
-  clang-tidy --list-checks
-  echo "-----------------"
-  clang-tidy --help-list-hidden
-  echo "-----------------"
   clang-format --style=llvm -i *.c *.h *.cpp *.hpp *.C *.cc *.CPP *.c++ *.cp *.cxx > clang-format-report-details.txt
 
   PAYLOAD_TIDY=$(cat clang-tidy-report.txt)
@@ -126,6 +126,7 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   PAYLOAD_CPPCHECK=$(cat cppcheck-report.txt)
   COMMENTS_URL=$(cat "${GITHUB_EVENT_PATH}" | jq -r .pull_request.comments_url)
 
+  echo ""
   echo "=== Display the reports ==="
   echo "${COMMENTS_URL}"
   echo "Clang-tidy errors:"
@@ -137,6 +138,7 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   echo "Cppcheck errors:"
   echo "${PAYLOAD_CPPCHECK}"
 
+  echo ""
   echo "=== Generate the output ==="
   if [ "${PAYLOAD_TIDY}" != "" ]; then
     OUTPUT=$'**CLANG-TIDY WARNINGS**:\n'
@@ -162,11 +164,13 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   echo "OUTPUT is:"
   echo "${OUTPUT}"
 
+  echo ""
   echo "=== Generate the payload ==="
   PAYLOAD=$(echo '{}' | jq --arg body "${OUTPUT}" '.body = $body')
   echo "PAYLOAD:"
   echo "${PAYLOAD}"
 
+  echo ""
   echo "=== Send the payload to GitHub API ==="
   curl -s -S -H "Authorization: token ${GITHUB_TOKEN}" --header "Content-Type: application/vnd.github.VERSION.text+json" --data "${PAYLOAD}" "${COMMENTS_URL}"
 fi
