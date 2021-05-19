@@ -82,6 +82,21 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   fi
 
   echo ""
+  echo "=== pwd ==="
+  pwd
+
+  echo ""
+  echo "=== List directories ==="
+  echo "GITHUB_WORKSPACE: ${GITHUB_WORKSPACE}"
+  ls -lha "${GITHUB_WORKSPACE}"
+  echo "HOME: ${HOME}"
+  ls -lha "${HOME}"
+  echo "GITHUB_ENV: ${GITHUB_ENV}"
+  ls -lhaR "${GITHUB_ENV}"
+  echo "GITHUB_PATH: ${GITHUB_PATH}"
+  ls -lha "${GITHUB_PATH}"
+
+  echo ""
   echo "=== List GITHUB_EVENT_PATH ==="
   ls -lha -R "${GITHUB_EVENT_PATH}"
 
