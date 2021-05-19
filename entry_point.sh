@@ -40,9 +40,10 @@ clang-tidy --version
 while IFS= read -r FILE; do
   echo "FILE: ---${FILE}---"
   clang-tidy "${FILE}" -checks=boost-*,bugprone-*,performance-*,readability-*,portability-*,modernize-*,clang-analyzer-cplusplus-*,clang-analyzer-*,cppcoreguidelines-* >> clang-tidy-report.txt
-  clang-format --dry-run -Werror "${FILE}" || echo "File: $filename not formatted!" >> clang-format-report.txt
+  clang-format --dry-run -Werror "${FILE}" || echo "File: ${FILE} not formatted!" >> clang-format-report.txt
+  cppcheck --enable=all --std=c++11 --language=c++ "${FILE}" >> cppcheck-report-individual.txt
 done < c_files.txt
-#cppcheck --enable=all --std=c++11 --language=c++ --output-file=cppcheck-report.txt *.c *.h *.cpp *.hpp *.C *.cc *.CPP *.c++ *.cp *.cxx
+cppcheck --enable=all --std=c++11 --language=c++ --output-file=cppcheck-report.txt *.c *.h *.cpp *.hpp *.C *.cc *.CPP *.c++ *.cp *.cxx
 
 echo ""
 echo "=== Report: Tidy ==="
@@ -53,8 +54,12 @@ echo "=== Report: Format ==="
 cat clang-format-report.txt
 
 echo ""
-echo "=== Report: CPP Check ==="
-#cat cppcheck-report.txt
+echo "=== Report: CPP Check #1 ==="
+cat cppcheck-report-individual.txt
+
+echo ""
+echo "=== Report: CPP Check #2 ==="
+cat cppcheck-report.txt
 
 exit 123
 
