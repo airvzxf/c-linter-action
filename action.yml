@@ -4,7 +4,7 @@ description: |
   Automatically checks pull requests changes and posts the comment with result.
 author: Israel Roldan [airvzxf]
 branding:
-  icon: check-square
+  icon: activity
   color: green
 runs:
   using: 'docker'
