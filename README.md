@@ -4,6 +4,7 @@ GitHub action for linting the C and C++ code. Uses clang-tidy, clang-format, and
 
 Example of usage:
 ```text
+# File in .github/workflows/c-linter.yml
 name: C-Linter
 
 on:
@@ -13,7 +14,7 @@ on:
 
 jobs:
   c-linter:
-    name: Analyze C/C++ code
+    name: Analyze C/C++ source code
     runs-on: ubuntu-latest
 
     env:
