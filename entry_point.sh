@@ -76,6 +76,8 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   echo ""
   echo "=== GitHub Event: Pull request ==="
 
+  ls -lhaR .
+
   if [[ -z ${GITHUB_TOKEN} ]]; then
     echo "ERROR: The GITHUB_TOKEN is required."
     exit 1
@@ -83,61 +85,34 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
 
   echo ""
   echo "=== Get pull request files link ==="
-  FILES_LINK=$(jq -r '.pull_request._links.self.href' "${GITHUB_EVENT_PATH}")/files
-  echo "Files link = ${FILES_LINK}"
+  GITHUB_FILES_JSON=$(jq -r '.pull_request._links.self.href' "${GITHUB_EVENT_PATH}")/files
+  echo "GitHub files in JSON: ${GITHUB_FILES_JSON}"
 
   echo ""
   echo "=== Get files ==="
-  curl "${FILES_LINK}" > files.json
-  FILES_URLS_STRING=$(jq -r '.[].raw_url' files.json)
-
-  echo ""
-  echo "=== Display files.json ==="
-  cat files.json
-
-  exit 123
-
-  readarray -t URLS <<< "${FILES_URLS_STRING}"
-
-  echo "File names: "
-  echo "${URLS[@]}"
-
-  mkdir -p files
-  cd files || (
-    echo "ERROR: The files directory is not accesible."
-    ls -lha .
-    exit 1
-  )
-
-  echo ""
-  echo "=== Download files ==="
-  for URL in "${URLS[@]}"; do
-    echo "Downloading ${URL}"
-    curl -LOk --remote-name "${URL}"
-  done
-  ls -lha .
+  curl "${GITHUB_FILES_JSON}" > files.json
+  FILES_LIST=$(jq -r '.[].filename' files.json)
+  rm -f files.json
 
   echo ""
   echo "=== Performing checkup ==="
-  for URL in "${URLS[@]}"; do
+  for FILE in "${FILES_LIST[@]}"; do
     echo ""
-    echo "URL: ${URL}"
-    FILE_NAME=$(basename "${URL}")
-    echo "FILE_NAME: ${FILE_NAME}"
-    if [[ ! ${FILE_NAME,,} =~ .*\.(c|h)?(\+\+|c|p|pp|xx) ]]; then
+    echo "FILE: ${FILE}"
+    if [[ ! ${FILE,,} =~ .*\.(c|h)?(\+\+|c|p|pp|xx) ]]; then
       echo "BAD: The file is not matching with the C/C++ files."
       continue
     fi
-    clang-tidy "${FILE_NAME}" -checks=boost-*,bugprone-*,performance-*,readability-*,portability-*,modernize-*,clang-analyzer-cplusplus-*,clang-analyzer-*,cppcoreguidelines-* >> clang-tidy-report.txt
-    clang-format --dry-run -Werror "${FILE_NAME}" || echo "File: ${FILE_NAME} not formatted!" >> clang-format-report.txt
+    clang-tidy "${FILE}" -checks=boost-*,bugprone-*,performance-*,readability-*,portability-*,modernize-*,clang-analyzer-cplusplus-*,clang-analyzer-*,cppcoreguidelines-* >> clang-tidy-report.txt
+    clang-format --dry-run -Werror "${FILE}" || echo "File: ${FILE} not formatted!" >> clang-format-report.txt
   done
 
-  echo ""
-  echo "Running cppcheck:"
-  cppcheck --enable=all --std=c++11 --language=c++ --output-file=cppcheck-report.txt *.c *.h *.cpp *.hpp *.C *.cc *.CPP *.c++ *.cp *.cxx
-  echo ""
-  echo "Running clang-format:"
-  clang-format --style=llvm -i *.c *.h *.cpp *.hpp *.C *.cc *.CPP *.c++ *.cp *.cxx > clang-format-report-details.txt
+#  echo ""
+#  echo "Running cppcheck:"
+#  cppcheck --enable=all --std=c++11 --language=c++ --output-file=cppcheck-report.txt *.c *.h *.cpp *.hpp *.C *.cc *.CPP *.c++ *.cp *.cxx
+#  echo ""
+#  echo "Running clang-format:"
+#  clang-format --style=llvm -i *.c *.h *.cpp *.hpp *.C *.cc *.CPP *.c++ *.cp *.cxx > clang-format-report-details.txt
 
   echo ""
   echo "=== Set payloads per package ==="
@@ -202,6 +177,8 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   PAYLOAD=$(echo '{}' | jq --arg body "${OUTPUT}" '.body = $body')
   echo "PAYLOAD:"
   echo "${PAYLOAD}"
+
+  exit 123
 
   echo ""
   echo "=== Send the payload to GitHub API ==="
