@@ -24,29 +24,26 @@ cd "${INPUT_PROJECT_PATH}" || (
 # *.c *.h *.cpp *.hpp *.cc *.c++ *.cp *.cxx
 FILES=$(find ./ -type f -regextype posix-extended -iregex '.*\.(c|h)?(\+\+|c|p|pp|xx)')
 echo "FILES: ${FILES}"
+echo "${FILES}" > c_files.txt
+echo "-----"
+cat c_files.txt
 
 echo ""
 echo "=== Processing #1 ==="
 while IFS= read -r line; do # Whitespace-safe EXCEPT newlines
   echo "line #1: ${line}"
-done < "${FILES}"
-
-echo ""
-echo "=== Processing #2 ==="
-while IFS= read -r line; do # Whitespace-safe EXCEPT newlines
-  echo "line #2: ${line}"
-done < "${FILES[@]}"
+done < c_files.txt
 
 echo ""
 echo "=== Processing #3 ==="
-"${FILES}" \
+echo "${FILES}" \
   | while IFS= read -r -d '' line; do
     echo "line #3: ${line}"
   done
 
 echo ""
 echo "=== Processing #4 ==="
-"${FILES[@]}" \
+echo "${FILES[@]}" \
   | while IFS= read -r -d '' line; do
     echo "line #4: ${line}"
   done
