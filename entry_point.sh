@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
 
+whoami || true
+pwd || true
+ls -lha . || true
+echo "GITHUB_EVENT_PATH: ${GITHUB_EVENT_PATH}" || true
+ls -lha "${GITHUB_EVENT_PATH}/files" || true
+ls -lha /home/ || true
+ls -lha /home/runner || true
+
+exit 123
+
 if [[ -z "$GITHUB_TOKEN" ]]; then
 	echo "The GITHUB_TOKEN is required."
 	exit 1

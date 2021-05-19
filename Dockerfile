@@ -12,10 +12,9 @@ RUN apt-get update
 RUN apt --assume-yes install \
         curl clang-tidy cmake jq clang cppcheck clang-format
 
+RUN whoami
+RUN pwd
 WORKDIR /build
 COPY entry_point.sh /entrypoint.sh
-RUN pwd
-RUN ls -lha .
 COPY . .
-RUN ls -lha .
 CMD ["bash", "/entrypoint.sh"]

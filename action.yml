@@ -6,6 +6,18 @@ author: Israel Roldan [airvzxf]
 branding:
   icon: activity
   color: green
+inputs:
+  project_path:
+    description: 'Project Directory.'
+    required: false
+    default: '.'
+  cppcheck_opts:
+    description: 'Additional cppcheck options.'
+    required: false
+    default: '--enable=warning'
 runs:
   using: 'docker'
   image: 'Dockerfile'
+  args:
+    - ${{ inputs.project_path }}
+    - ${{ inputs.cppcheck_opts }}
