@@ -3,20 +3,21 @@
 #set -xv
 
 echo ""
-echo "-------- v1.0.1.2 --------"
+echo "-------- v1.0.1.3 --------"
 
 echo ""
 echo "=== Environment variables ==="
 echo "INPUT_PROJECT_PATH:      ${INPUT_PROJECT_PATH}"
-echo "INPUT_CPPCHECK_OPTIONS:  ${INPUT_CPPCHECK_OPTIONS}"
+echo "INPUT_CHECK_ALL_FILES:   ${INPUT_CHECK_ALL_FILES}"
 echo "GITHUB_EVENT_NAME:       ${GITHUB_EVENT_NAME}"
+echo "INPUT_CPPCHECK_OPTIONS:  ${INPUT_CPPCHECK_OPTIONS}"
 echo ""
 echo "=== Print Environment variables ==="
 printenv
 
-if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+if [ "${INPUT_CHECK_ALL_FILES}" = "true" ]; then
   echo ""
-  echo "=== GitHub Event: Push ==="
+  echo "=== Check all source code files ==="
 
   echo ""
   echo "=== Get C/C++ files ==="
@@ -25,7 +26,6 @@ if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
     ls -lha "${INPUT_PROJECT_PATH}/.."
     exit 1
   )
-  # *.c *.h *.cpp *.hpp *.cc *.c++ *.cp *.cxx
   FILES=$(find ./ -type f -regextype posix-extended -iregex '.*\.(c|h)?(\+\+|c|p|pp|xx)')
   echo "FILES: ${FILES}"
   echo "${FILES}" > c_files.txt
@@ -47,6 +47,7 @@ if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
     cppcheck --enable=all --std=c++11 --language=c++ "${FILE}" >> cppcheck-report-individual.txt
   done < c_files.txt
   cppcheck --enable=all --std=c++11 --language=c++ --output-file=cppcheck-report.txt "${INPUT_PROJECT_PATH}"/*.c "${INPUT_PROJECT_PATH}"/*.h "${INPUT_PROJECT_PATH}"/*.cpp "${INPUT_PROJECT_PATH}"/*.hpp "${INPUT_PROJECT_PATH}"/*.C "${INPUT_PROJECT_PATH}"/*.cc "${INPUT_PROJECT_PATH}"/*.CPP "${INPUT_PROJECT_PATH}"/*.c++ "${INPUT_PROJECT_PATH}"/*.cp "${INPUT_PROJECT_PATH}"/*.cxx
+  rm -f c_files.txt
 
   echo ""
   echo "=== Report: Tidy ==="
@@ -66,6 +67,11 @@ if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
 
 fi
 
+if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+  echo "TODO: Needs to add the code to scan when the GitHub event is pushed."
+  exit 0
+fi
+
 if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   echo ""
   echo "=== GitHub Event: Pull request ==="
@@ -76,16 +82,19 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   fi
 
   echo ""
-  echo "=== Get pull request files ==="
+  echo "=== Get pull request files link ==="
   FILES_LINK=$(jq -r '.pull_request._links.self.href' "${GITHUB_EVENT_PATH}")/files
-  echo "Files = ${FILES_LINK}"
+  echo "Files link = ${FILES_LINK}"
 
+  echo ""
+  echo "=== Get files ==="
   curl "${FILES_LINK}" > files.json
   FILES_URLS_STRING=$(jq -r '.[].raw_url' files.json)
 
   readarray -t URLS <<< "${FILES_URLS_STRING}"
 
-  echo "File names: " "${URLS[@]}"
+  echo "File names: "
+  echo "${URLS[@]}"
 
   mkdir -p files
   cd files || (
@@ -95,7 +104,7 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   )
 
   echo ""
-  echo "=== Download pull request files ==="
+  echo "=== Download files ==="
   for URL in "${URLS[@]}"; do
     echo "Downloading ${URL}"
     curl -LOk --remote-name "${URL}"
@@ -105,11 +114,11 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   echo ""
   echo "=== Performing checkup ==="
   for URL in "${URLS[@]}"; do
+    echo ""
     echo "URL: ${URL}"
     FILE_NAME=$(basename "${URL}")
     echo "FILE_NAME: ${FILE_NAME}"
-    # '.*\.(c|h)?(\+\+|c|p|pp|xx)'
-    if [[ ! ${FILE_NAME} =~ .*\.(c|h)?(\+\+|c|p|pp|xx) ]]; then
+    if [[ ! ${FILE_NAME,,} =~ .*\.(c|h)?(\+\+|c|p|pp|xx) ]]; then
       echo "BAD: The file is not matching with the C/C++ files."
       continue
     fi
@@ -117,7 +126,11 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
     clang-format --dry-run -Werror "${FILE_NAME}" || echo "File: ${FILE_NAME} not formatted!" >> clang-format-report.txt
   done
 
+  echo ""
+  echo "Running cppcheck:"
   cppcheck --enable=all --std=c++11 --language=c++ --output-file=cppcheck-report.txt *.c *.h *.cpp *.hpp *.C *.cc *.CPP *.c++ *.cp *.cxx
+  echo ""
+  echo "Running clang-format:"
   clang-format --style=llvm -i *.c *.h *.cpp *.hpp *.C *.cc *.CPP *.c++ *.cp *.cxx > clang-format-report-details.txt
 
   echo ""
@@ -127,7 +140,7 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   PAYLOAD_FORMAT=$(cat clang-format-report.txt)
   PAYLOAD_FORMAT_DETAILS=$(cat clang-format-report-details.txt)
   PAYLOAD_CPPCHECK=$(cat cppcheck-report.txt)
-  COMMENTS_URL=$(cat "${GITHUB_EVENT_PATH}" | jq -r .pull_request.comments_url)
+  COMMENTS_URL=$(jq < "${GITHUB_EVENT_PATH}" -r .pull_request.comments_url)
 
   echo ""
   echo "=== Display the reports ==="
@@ -173,7 +186,8 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   echo "${OUTPUT}"
 
   if [[ -z ${OUTPUT} ]]; then
-    echo "Not found any output. It didn't get any error or source code."
+    echo "Finished! Not found any output."
+    echo "---> The scan did not get any error or source code."
     exit 0
   fi
 
