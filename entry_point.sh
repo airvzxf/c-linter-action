@@ -1,9 +1,4 @@
 #!/usr/bin/env bash
-#set -e
-#set -xv
-
-echo ""
-echo "-------- v1.0.1.4 --------"
 
 echo ""
 echo "=== Environment variables ==="
@@ -61,7 +56,6 @@ if [ "${INPUT_CHECK_ALL_FILES}" = "true" ]; then
   echo ""
   echo "=== Report: CPP Check #2 ==="
   cat cppcheck-report.txt
-
 fi
 
 if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
@@ -196,19 +190,28 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
     exit 0
   fi
 
-  echo ""
-  echo "=== Generate the payload ==="
-  PAYLOAD=$(echo '{}' | jq --arg body "$(cat output.txt)" '.body = $body')
-  rm -f output.txt
+  REPORT_FILES="clang-tidy-report.txt clang-format-report.txt clang-format-details-report.txt cppcheck-report.txt"
+  for REPORT_FILE in ${REPORT_FILES}; do
+    if [[ -f ${REPORT_FILE} ]]; then
+      echo "REPORT_FILE: ${REPORT_FILE}"
+      ls -lha "${REPORT_FILE}"
+      echo ""
+    fi
+  done
 
-  echo ""
-  echo "=== Send the payload to GitHub API ==="
-  COMMENTS_URL=$(jq < "${GITHUB_EVENT_PATH}" -r .pull_request.comments_url)
-  curl -s -S \
-    -H "Authorization: token ${GITHUB_TOKEN}" \
-    --header "Content-Type: application/vnd.github.VERSION.text+json" \
-    --data "${PAYLOAD}" \
-    "${COMMENTS_URL}"
+#  echo ""
+#  echo "=== Generate the payload ==="
+#  PAYLOAD=$(echo '{}' | jq --arg body "$(cat output.txt)" '.body = $body')
+#  rm -f output.txt
+#
+#  echo ""
+#  echo "=== Send the payload to GitHub API ==="
+#  COMMENTS_URL=$(jq < "${GITHUB_EVENT_PATH}" -r .pull_request.comments_url)
+#  curl -s -S \
+#    -H "Authorization: token ${GITHUB_TOKEN}" \
+#    --header "Content-Type: application/vnd.github.VERSION.text+json" \
+#    --data "${PAYLOAD}" \
+#    "${COMMENTS_URL}"
 fi
-ls -lha .
-cat clang-format-details-report.txt
+#ls -lha .
+#cat clang-format-details-report.txt
