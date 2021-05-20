@@ -136,9 +136,6 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   #  echo ""
   #  echo "Running cppcheck:"
   #  cppcheck --enable=all --std=c++11 --language=c++ --output-file=cppcheck-report.txt *.c *.h *.cpp *.hpp *.C *.cc *.CPP *.c++ *.cp *.cxx
-  #  echo ""
-  #  echo "Running clang-format:"
-  #  clang-format --style=llvm -i *.c *.h *.cpp *.hpp *.C *.cc *.CPP *.c++ *.cp *.cxx > clang-format-report-details.txt
 
   echo ""
   echo "=== Set payloads per package ==="
@@ -214,3 +211,4 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
     "${COMMENTS_URL}"
 fi
 ls -lha .
+cat clang-format-details-report.txt
