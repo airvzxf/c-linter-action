@@ -102,8 +102,13 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
       echo "NOTICE: The file is not matching with the C/C++ files."
       continue
     fi
-    clang-tidy "${FILE}" -checks=boost-*,bugprone-*,performance-*,readability-*,portability-*,modernize-*,clang-analyzer-cplusplus-*,clang-analyzer-*,cppcoreguidelines-* >> clang-tidy-report.txt 2> /dev/null
-    clang-format --dry-run -Werror "${FILE}" || echo "File: ${FILE} not formatted!" >> clang-format-report.txt 2> /dev/null
+    clang-tidy \
+      -warnings-as-errors=* \
+      -header-filter=.* \
+      -checks=* \
+      "${FILE}" -- "${FILE}" \
+      >> clang-tidy-report.txt
+    # clang-format --dry-run -Werror "${FILE}" || echo "File: ${FILE} not formatted!" >> clang-format-report.txt 2> /dev/null
   done < committed_files.txt
   rm -f committed_files.json
 
@@ -122,17 +127,6 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   PAYLOAD_FORMAT_DETAILS=$(cat clang-format-report-details.txt)
   PAYLOAD_CPPCHECK=$(cat cppcheck-report.txt)
 
-  if [[ -n ${PAYLOAD_CPPCHECK} ]]; then
-    {
-      echo "**CPPCHECK WARNINGS**:"
-      echo ""
-      echo '```text'
-      echo "${PAYLOAD_CPPCHECK}"
-      echo '```'
-      echo ""
-    } >> output.txt
-  fi
-
   if [[ -n ${PAYLOAD_FORMAT} ]]; then
     {
       echo "**CLANG-FORMAT WARNINGS**:"
@@ -150,6 +144,17 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
       echo ""
       echo '```text'
       echo "${PAYLOAD_FORMAT_DETAILS}"
+      echo '```'
+      echo ""
+    } >> output.txt
+  fi
+
+  if [[ -n ${PAYLOAD_CPPCHECK} ]]; then
+    {
+      echo "**CPPCHECK WARNINGS**:"
+      echo ""
+      echo '```text'
+      echo "${PAYLOAD_CPPCHECK}"
       echo '```'
       echo ""
     } >> output.txt
@@ -178,8 +183,6 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   echo "=== Generate the payload ==="
   PAYLOAD=$(echo '{}' | jq --arg body "$(cat output.txt)" '.body = $body')
   rm -f output.txt
-  echo "PAYLOAD:"
-  echo "${PAYLOAD}"
 
   echo ""
   echo "=== Send the payload to GitHub API ==="
