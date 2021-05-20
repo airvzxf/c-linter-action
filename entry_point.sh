@@ -100,6 +100,7 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
 
     echo "CLang Tidy:"
     clang-tidy \
+      --format-style=llvm \
       --warnings-as-errors=* \
       --header-filter=.* \
       --checks=* \
@@ -115,15 +116,6 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
       "${FILE}" \
       || echo "File: ${FILE} not formatted!" \
         >> clang-format-report.txt
-
-    echo "CLang Format details:"
-    clang-format \
-      --style=LLVM \
-      --sort-includes \
-      --Werror \
-      --dry-run \
-      "${FILE}" \
-      2>> clang-format-details-report.txt
   done < committed_files.txt
   rm -f committed_files.json
 
@@ -135,7 +127,6 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   echo "=== Set payloads per package ==="
   PAYLOAD_TIDY=$(cat clang-tidy-report.txt)
   PAYLOAD_FORMAT=$(cat clang-format-report.txt)
-  PAYLOAD_FORMAT_DETAILS=$(cat clang-format-details-report.txt)
   PAYLOAD_CPPCHECK=$(cat cppcheck-report.txt)
   IS_REPORTED="false"
 
@@ -143,24 +134,18 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
     {
       echo "**CLANG-FORMAT WARNINGS**:"
       echo ""
+      echo "For more information execute:"
+      echo "---> \`clang-format --style=LLVM --sort-includes --Werror --dry-run file.c\`"
+      echo ""
+      echo "If you want to do some automatically fixes, try this:"
+      echo "---> \`clang-format -i --style=LLVM --sort-includes file.c\`"
+      echo ""
       echo '```text'
       echo "${PAYLOAD_FORMAT}"
       echo '```'
       echo ""
       IS_REPORTED="true"
     } > clang-format-report.txt
-  fi
-
-  if [[ -n ${PAYLOAD_FORMAT_DETAILS} ]]; then
-    {
-      echo "**CLANG-FORMAT DETAILS WARNINGS**:"
-      echo ""
-      echo '```text'
-      echo "${PAYLOAD_FORMAT_DETAILS}"
-      echo '```'
-      echo ""
-      IS_REPORTED="true"
-    } > clang-format-details-report.txt
   fi
 
   if [[ -n ${PAYLOAD_CPPCHECK} ]]; then
@@ -181,6 +166,12 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
     {
       echo "**CLANG-TIDY WARNINGS**:"
       echo ""
+      echo "For more information execute:"
+      echo "---> \`clang-tidy --format-style=llvm --warnings-as-errors=* --header-filter=.* --checks=* file.c -- file.c\`"
+      echo ""
+      echo "If you want to do some automatically fixes, try this:"
+      echo "---> \`clang-tidy --fix --fix-errors --format-style=llvm --header-filter=.* --checks=* file.c -- file.c\`"
+      echo ""
       echo '```text'
       echo "${PAYLOAD_TIDY}"
       echo '```'
@@ -195,7 +186,7 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
     exit 0
   fi
 
-  REPORT_FILES="clang-tidy-report.txt clang-format-report.txt clang-format-details-report.txt cppcheck-report.txt"
+  REPORT_FILES="clang-tidy-report.txt clang-format-report.txt cppcheck-report.txt"
   for REPORT_FILE in ${REPORT_FILES}; do
     if [[ ! -f ${REPORT_FILE} ]]; then
       continue
@@ -215,7 +206,4 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
       --data "${PAYLOAD}" \
       "${COMMENTS_URL}"
   done
-
 fi
-#ls -lha .
-#cat clang-format-details-report.txt
