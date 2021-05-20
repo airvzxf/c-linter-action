@@ -121,10 +121,9 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   PAYLOAD_FORMAT=$(cat clang-format-report.txt)
   PAYLOAD_FORMAT_DETAILS=$(cat clang-format-report-details.txt)
   PAYLOAD_CPPCHECK=$(cat cppcheck-report.txt)
-  COMMENTS_URL=$(jq < "${GITHUB_EVENT_PATH}" -r .pull_request.comments_url)
 
-  echo ""
-  echo "=== Display the reports ==="
+  #  echo ""
+  #  echo "=== Display the reports ==="
   #  echo "Comments URL:"
   #  echo "${COMMENTS_URL}"
   #  echo ""
@@ -172,6 +171,17 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
     OUTPUT+=$'\n```\n'
   fi
 
+  if [[ -n ${PAYLOAD_FORMAT_DETAILS} ]]; then
+    {
+      echo "**CLANG-FORMAT DETAILS WARNINGS**:"
+      echo ""
+      echo '```'
+      echo "${PAYLOAD_FORMAT_DETAILS}"
+      echo '```'
+      echo ""
+    } >> output.txt
+  fi
+
   if [[ -n ${PAYLOAD_CPPCHECK} ]]; then
     {
       echo "**CPPCHECK WARNINGS**:"
@@ -209,5 +219,6 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
 
   echo ""
   echo "=== Send the payload to GitHub API ==="
+  COMMENTS_URL=$(jq < "${GITHUB_EVENT_PATH}" -r .pull_request.comments_url)
   curl -s -S -H "Authorization: token ${GITHUB_TOKEN}" --header "Content-Type: application/vnd.github.VERSION.text+json" --data "${PAYLOAD}" "${COMMENTS_URL}"
 fi
