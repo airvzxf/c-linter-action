@@ -136,11 +136,11 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
       echo ""
       echo "For more information execute:"
       # shellcheck disable=SC2016
-      echo '📝--> `clang-format --style=LLVM --sort-includes --Werror --dry-run file.c`'
+      echo '📝 `clang-format --style=LLVM --sort-includes --Werror --dry-run file.c`'
       echo ""
       echo "If you want to do some automatically fixes, try this:"
       # shellcheck disable=SC2016
-      echo '🔧--> `clang-format -i --style=LLVM --sort-includes file.c`'
+      echo '🔧 `clang-format -i --style=LLVM --sort-includes file.c`'
       echo ""
       echo '```text'
       echo "${PAYLOAD_FORMAT}"
@@ -170,11 +170,11 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
       echo ""
       echo "For more information execute:"
       # shellcheck disable=SC2016
-      echo '📝--> `clang-tidy --format-style=llvm --warnings-as-errors=* --header-filter=.* --checks=* file.c -- file.c`'
+      echo '📝 `clang-tidy --format-style=llvm --warnings-as-errors=* --header-filter=.* --checks=* file.c -- file.c`'
       echo ""
       echo "If you want to do some automatically fixes, try this:"
       # shellcheck disable=SC2016
-      echo '🔧--> `clang-tidy --fix --fix-errors --format-style=llvm --header-filter=.* --checks=* file.c -- file.c`'
+      echo '🔧 `clang-tidy --fix --fix-errors --format-style=llvm --header-filter=.* --checks=* file.c -- file.c`'
       echo ""
       echo '```text'
       echo "${PAYLOAD_TIDY}"
