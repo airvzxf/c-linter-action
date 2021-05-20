@@ -125,24 +125,32 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
 
   echo ""
   echo "=== Display the reports ==="
-  echo "Comments URL:"
-  echo "${COMMENTS_URL}"
-  echo ""
-  echo "Clang-tidy errors:"
-  echo "${PAYLOAD_TIDY}"
-  echo ""
-  echo "Clang-format errors:"
-  echo "${PAYLOAD_FORMAT}"
-  echo ""
-  echo "Clang-format details errors:"
-  echo "${PAYLOAD_FORMAT_DETAILS}"
-  echo ""
-  echo "Cppcheck errors:"
-  echo "${PAYLOAD_CPPCHECK}"
+  #  echo "Comments URL:"
+  #  echo "${COMMENTS_URL}"
+  #  echo ""
+  #  echo "Clang-tidy errors:"
+  #  echo "${PAYLOAD_TIDY}"
+  #  echo ""
+  #  echo "Clang-format errors:"
+  #  echo "${PAYLOAD_FORMAT}"
+  #  echo ""
+  #  echo "Clang-format details errors:"
+  #  echo "${PAYLOAD_FORMAT_DETAILS}"
+  #  echo ""
+  #  echo "Cppcheck errors:"
+  #  echo "${PAYLOAD_CPPCHECK}"
 
   echo ""
   echo "=== Generate the output ==="
   if [[ -n ${PAYLOAD_TIDY} ]]; then
+    {
+      echo "**CLANG-TIDY WARNINGS**:"
+      echo ""
+      echo '```'
+      echo "${PAYLOAD_TIDY}"
+      echo '```'
+      echo ""
+    } >> output.txt
     OUTPUT=$'**CLANG-TIDY WARNINGS**:\n'
     OUTPUT+=$'\n```\n'
     OUTPUT+=${PAYLOAD_TIDY}
@@ -150,6 +158,14 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   fi
 
   if [[ -n ${PAYLOAD_FORMAT} ]]; then
+    {
+      echo "**CLANG-FORMAT WARNINGS**:"
+      echo ""
+      echo '```'
+      echo "${PAYLOAD_FORMAT}"
+      echo '```'
+      echo ""
+    } >> output.txt
     OUTPUT=$'**CLANG-FORMAT WARNINGS**:\n'
     OUTPUT+=$'\n```\n'
     OUTPUT+=${PAYLOAD_FORMAT}
@@ -157,6 +173,14 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   fi
 
   if [[ -n ${PAYLOAD_CPPCHECK} ]]; then
+    {
+      echo "**CPPCHECK WARNINGS**:"
+      echo ""
+      echo '```'
+      echo "${PAYLOAD_CPPCHECK}"
+      echo '```'
+      echo ""
+    } >> output.txt
     OUTPUT+=$'\n**CPPCHECK WARNINGS**:\n'
     OUTPUT+=$'\n```\n'
     OUTPUT+=${PAYLOAD_CPPCHECK}
@@ -172,24 +196,14 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
     exit 0
   fi
 
-  if [[ -n ${PAYLOAD_TIDY} ]]; then
-    echo "*** PAYLOAD_TIDY"
-  fi
-
-  if [[ -n ${PAYLOAD_FORMAT} ]]; then
-    echo "*** PAYLOAD_FORMAT"
-  fi
-
-  if [[ -n ${PAYLOAD_CPPCHECK} ]]; then
-    echo "*** PAYLOAD_CPPCHECK"
-  fi
-
-
   echo ""
   echo "=== Generate the payload ==="
   PAYLOAD=$(echo '{}' | jq --arg body "${OUTPUT}" '.body = $body')
   echo "PAYLOAD:"
   echo "${PAYLOAD}"
+
+  cat output.txt
+  rm -f output.txt
 
   exit 123
 
