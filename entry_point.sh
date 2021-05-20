@@ -204,7 +204,7 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
     echo "=== Generate the payload ==="
     echo "REPORT_FILE: ${REPORT_FILE}"
     ls -lha "${REPORT_FILE}"
-    PAYLOAD=$(echo '{}' | jq --arg body "$(cat "${REPORT_FILE}")" '.body = $body')
+    PAYLOAD=$(echo '{}' | jq -n --arg body "$(cat "${REPORT_FILE}")" '.body = $body')
 
     echo ""
     echo "=== Send the payload to GitHub API ==="
