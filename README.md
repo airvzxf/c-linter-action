@@ -2,10 +2,12 @@
 
 GitHub action for linting the C and C++ code. Uses clang-tidy, clang-format, and cppcheck.
 
-Example of usage:
+## Usage Example
+
+Add this code in `.github/workflows/c-linter.yml`.
 
 ```text
-# File in .github/workflows/c-linter.yml
+# File in '.github/workflows/c-linter.yml'
 name: C-Linter
 
 on:

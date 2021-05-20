@@ -137,6 +137,7 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   PAYLOAD_FORMAT=$(cat clang-format-report.txt)
   PAYLOAD_FORMAT_DETAILS=$(cat clang-format-details-report.txt)
   PAYLOAD_CPPCHECK=$(cat cppcheck-report.txt)
+  IS_REPORTED="false"
 
   if [[ -n ${PAYLOAD_FORMAT} ]]; then
     {
@@ -146,7 +147,8 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
       echo "${PAYLOAD_FORMAT}"
       echo '```'
       echo ""
-    } >> output.txt
+      IS_REPORTED="true"
+    } >> clang-format-report.txt
   fi
 
   if [[ -n ${PAYLOAD_FORMAT_DETAILS} ]]; then
@@ -157,7 +159,8 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
       echo "${PAYLOAD_FORMAT_DETAILS}"
       echo '```'
       echo ""
-    } >> output.txt
+      IS_REPORTED="true"
+    } >> clang-format-details-report.txt
   fi
 
   if [[ -n ${PAYLOAD_CPPCHECK} ]]; then
@@ -168,7 +171,8 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
       echo "${PAYLOAD_CPPCHECK}"
       echo '```'
       echo ""
-    } >> output.txt
+      IS_REPORTED="true"
+    } >> cppcheck-report.txt
   fi
 
   echo ""
@@ -181,15 +185,15 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
       echo "${PAYLOAD_TIDY}"
       echo '```'
       echo ""
-    } >> output.txt
+      IS_REPORTED="true"
+    } >> clang-tidy-report.txt
   fi
 
-  if [[ ! -f "output.txt" ]]; then
+  if [[ ${IS_REPORTED} != "true" ]]; then
     echo "Finished! Not found any output."
     echo "---> The scan did not get any error or source code."
     exit 0
   fi
-  rm -f output.txt
 
   REPORT_FILES="clang-tidy-report.txt clang-format-report.txt clang-format-details-report.txt cppcheck-report.txt"
   for REPORT_FILE in ${REPORT_FILES}; do
