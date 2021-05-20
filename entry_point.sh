@@ -95,6 +95,7 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   C_EXTENSIONS=$(
     echo -n \\.c{,c,p,pp,u,uh,x,xx}"$|" \\.h{,h,p,pp,x,xx}"$|" | sed -E 's/ //g;s/\|$//g'
   )
+
   while IFS= read -r FILE; do
     echo ""
     echo "FILE: ${FILE}"
@@ -102,15 +103,33 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
       echo "NOTICE: The file is not matching with the C/C++ files."
       continue
     fi
+
     echo "CLang Tidy:"
     clang-tidy \
-      -warnings-as-errors=* \
-      -header-filter=.* \
-      -checks=* \
+      --warnings-as-errors=* \
+      --header-filter=.* \
+      --checks=* \
       "${FILE}" -- "${FILE}" \
       >> clang-tidy-report.txt
+
     echo "CLang Format:"
-    clang-format --dry-run -Werror "${FILE}" || echo "File: ${FILE} not formatted!" >> clang-format-report.txt 2> /dev/null
+    clang-format \
+      --dry-run \
+      --Werror \
+      --style=LLVM \
+      --sort-includes \
+      "${FILE}" \
+      || echo "File: ${FILE} not formatted!" \
+        >> clang-format-report.txt
+
+    echo "CLang Format details:"
+    clang-format \
+      --dry-run \
+      --Werror \
+      --style=LLVM \
+      --sort-includes \
+      "${FILE}" \
+      >> clang-format-details-report.txt
   done < committed_files.txt
   rm -f committed_files.json
 
@@ -125,7 +144,7 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   echo "=== Set payloads per package ==="
   PAYLOAD_TIDY=$(cat clang-tidy-report.txt)
   PAYLOAD_FORMAT=$(cat clang-format-report.txt)
-  PAYLOAD_FORMAT_DETAILS=$(cat clang-format-report-details.txt)
+  PAYLOAD_FORMAT_DETAILS=$(cat clang-format-details-report.txt)
   PAYLOAD_CPPCHECK=$(cat cppcheck-report.txt)
 
   if [[ -n ${PAYLOAD_FORMAT} ]]; then

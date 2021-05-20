@@ -29,14 +29,35 @@ jobs:
         uses: airvzxf/c-linter-action@main
 ```
 
+## Settings
+
+Option | Description | Required | Default | Example
+---    | ---         | ---      | ---     | ---
+project_path | Project Directory. | No | ./ | src/
+clang_tidy_options | Options for CLang Tidy. | No | --warnings-as-errors=* --header-filter=.* --checks=* | --checks=-clang-analyzer-cplusplus*
+clang_format_options | Options for CLang Format. | No | --style=LLVM --sort-includes | --style=Mozilla
+cppcheck_options | Options for CPP Check. | No | --xxx | --yyy
+
 ## Tools
 
-### Clang-tidy
+### CLang Tidy
 
-Visit the [official web page][clang-tidy-web] for deep and detailed information.
+Visit the [official web page][clang-tidy-web] for more information.
 
-- List all the checks: `clang-tidy --list-checks -checks=*`
-- Recommended options: `-warnings-as-errors=* -header-filter=.* -checks=*`
-- Complete command: `clang-tidy -warnings-as-errors=* -header-filter=.* -checks=* main.c -- main.c`
+- Recommended options: `--format-style=llvm --warnings-as-errors=* --header-filter=.* --checks=*`
+- Complete
+  command: `clang-tidy --format-style=llvm --warnings-as-errors=* --header-filter=.* --checks=* main.c -- main.c`
+- List all the checks: `clang-tidy --list-checks --checks=*`
+- Auto fix option: `--fix --fix-errors`
 
-[clang-tidy-web]: https://clang.llvm.org/extra/clang-tidy/
+### CLang format
+
+Visit the [official web page][clang-format-web] for more information.
+
+- Recommended options: `--dry-run --Werror --style=LLVM`
+- Complete command: `clang-format --dry-run --Werror --style=LLVM main.c`
+- Auto fix option: `-i`
+
+[clang-tidy-web]: https://clang.llvm.org/extra/clang-tidy/index.html
+
+[clang-format-web]: https://clang.llvm.org/docs/ClangFormat.html
