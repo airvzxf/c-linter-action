@@ -7,7 +7,7 @@ echo "INPUT_CHECK_ALL_FILES:   ${INPUT_CHECK_ALL_FILES}"
 echo "GITHUB_EVENT_NAME:       ${GITHUB_EVENT_NAME}"
 echo "INPUT_CPPCHECK_OPTIONS:  ${INPUT_CPPCHECK_OPTIONS}"
 
-if [ "${INPUT_CHECK_ALL_FILES}" = "true" ]; then
+if [[ ${INPUT_CHECK_ALL_FILES} == "true" ]]; then
   echo ""
   echo "=== Check all source code files ==="
 
@@ -58,12 +58,12 @@ if [ "${INPUT_CHECK_ALL_FILES}" = "true" ]; then
   cat cppcheck-report.txt
 fi
 
-if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+if [[ ${GITHUB_EVENT_NAME} == "push" ]]; then
   echo "TODO: Needs to add the code to scan when the GitHub event is pushed."
   exit 0
 fi
 
-if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
   echo ""
   echo "=== GitHub Event: Pull request ==="
 
@@ -135,10 +135,10 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
       echo "**CLANG-FORMAT WARNINGS**:"
       echo ""
       echo "For more information execute:"
-      echo "---> \`clang-format --style=LLVM --sort-includes --Werror --dry-run file.c\`"
+      echo '---> `clang-format --style=LLVM --sort-includes --Werror --dry-run file.c`'
       echo ""
       echo "If you want to do some automatically fixes, try this:"
-      echo "---> \`clang-format -i --style=LLVM --sort-includes file.c\`"
+      echo '---> `clang-format -i --style=LLVM --sort-includes file.c`'
       echo ""
       echo '```text'
       echo "${PAYLOAD_FORMAT}"
@@ -167,10 +167,10 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
       echo "**CLANG-TIDY WARNINGS**:"
       echo ""
       echo "For more information execute:"
-      echo "---> \`clang-tidy --format-style=llvm --warnings-as-errors=* --header-filter=.* --checks=* file.c -- file.c\`"
+      echo '---> `clang-tidy --format-style=llvm --warnings-as-errors=* --header-filter=.* --checks=* file.c -- file.c`'
       echo ""
       echo "If you want to do some automatically fixes, try this:"
-      echo "---> \`clang-tidy --fix --fix-errors --format-style=llvm --header-filter=.* --checks=* file.c -- file.c\`"
+      echo '---> `clang-tidy --fix --fix-errors --format-style=llvm --header-filter=.* --checks=* file.c -- file.c`'
       echo ""
       echo '```text'
       echo "${PAYLOAD_TIDY}"
@@ -186,19 +186,41 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
     exit 0
   fi
 
-  REPORT_FILES="clang-tidy-report.txt clang-format-report.txt cppcheck-report.txt"
+    echo ""
+    echo "=== Error message: Generate the payload ==="
+    {
+      echo "😢 Sorry, you code not pass the quality scanners."
+      echo ""
+      echo "The \`bot\` will comment below the errors and how you can check in your local or fix."
+      echo ""
+      echo "Thanks! 🦥"
+      echo ""
+    } >> error_message.txt
+    PAYLOAD=$(echo '{}' | jq -n --arg body "$(cat error_message.txt)" '.body = $body')
+    rm -f error_message.txt
+
+    echo ""
+    echo "=== Error message: Send the payload to GitHub API ==="
+    COMMENTS_URL=$(jq < "${GITHUB_EVENT_PATH}" -r .pull_request.comments_url)
+    curl -s -S \
+      -H "Authorization: token ${GITHUB_TOKEN}" \
+      --header "Content-Type: application/vnd.github.VERSION.text+json" \
+      --data "${PAYLOAD}" \
+      "${COMMENTS_URL}"
+
+  REPORT_FILES="clang-format-report.txt cppcheck-report.txt clang-tidy-report.txt"
   for REPORT_FILE in ${REPORT_FILES}; do
     if [[ ! -f ${REPORT_FILE} ]]; then
       continue
     fi
     echo ""
-    echo "=== Generate the payload ==="
+    echo "=== Report: Generate the payload ==="
     echo "REPORT_FILE: ${REPORT_FILE}"
     ls -lha "${REPORT_FILE}"
     PAYLOAD=$(echo '{}' | jq -n --arg body "$(cat "${REPORT_FILE}")" '.body = $body')
 
     echo ""
-    echo "=== Send the payload to GitHub API ==="
+    echo "=== Report: Send the payload to GitHub API ==="
     COMMENTS_URL=$(jq < "${GITHUB_EVENT_PATH}" -r .pull_request.comments_url)
     curl -s -S \
       -H "Authorization: token ${GITHUB_TOKEN}" \
