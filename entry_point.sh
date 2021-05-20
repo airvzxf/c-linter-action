@@ -142,24 +142,24 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
 
   echo ""
   echo "=== Generate the output ==="
-  if [ "${PAYLOAD_TIDY}" != "" ]; then
+  if [ -n "${PAYLOAD_TIDY}" ]; then
     OUTPUT=$'**CLANG-TIDY WARNINGS**:\n'
     OUTPUT+=$'\n```\n'
-    OUTPUT+="${PAYLOAD_TIDY}"
+    OUTPUT+=${PAYLOAD_TIDY}
     OUTPUT+=$'\n```\n'
   fi
 
-  if [ "${PAYLOAD_FORMAT}" != "" ]; then
+  if [ -n "${PAYLOAD_FORMAT}" ]; then
     OUTPUT=$'**CLANG-FORMAT WARNINGS**:\n'
     OUTPUT+=$'\n```\n'
-    OUTPUT+="${PAYLOAD_FORMAT}"
+    OUTPUT+=${PAYLOAD_FORMAT}
     OUTPUT+=$'\n```\n'
   fi
 
-  if [ "${PAYLOAD_CPPCHECK}" != "" ]; then
+  if [ -n "${PAYLOAD_CPPCHECK}" ]; then
     OUTPUT+=$'\n**CPPCHECK WARNINGS**:\n'
     OUTPUT+=$'\n```\n'
-    OUTPUT+="${PAYLOAD_CPPCHECK}"
+    OUTPUT+=${PAYLOAD_CPPCHECK}
     OUTPUT+=$'\n```\n'
   fi
 
