@@ -90,7 +90,6 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   echo "${FILES_LIST}" > committed_files.txt
   rm -f github_files.json
 
-  set -xv
   echo ""
   echo "=== Performing check up ==="
   C_EXTENSIONS=$(
