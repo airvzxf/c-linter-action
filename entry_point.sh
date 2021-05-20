@@ -102,13 +102,15 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
       echo "NOTICE: The file is not matching with the C/C++ files."
       continue
     fi
+    echo "CLang Tidy:"
     clang-tidy \
       -warnings-as-errors=* \
       -header-filter=.* \
       -checks=* \
       "${FILE}" -- "${FILE}" \
       >> clang-tidy-report.txt
-    # clang-format --dry-run -Werror "${FILE}" || echo "File: ${FILE} not formatted!" >> clang-format-report.txt 2> /dev/null
+    echo "CLang Format:"
+    clang-format --dry-run -Werror "${FILE}" || echo "File: ${FILE} not formatted!" >> clang-format-report.txt 2> /dev/null
   done < committed_files.txt
   rm -f committed_files.json
 
@@ -121,7 +123,6 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
 
   echo ""
   echo "=== Set payloads per package ==="
-  ls -lha .
   PAYLOAD_TIDY=$(cat clang-tidy-report.txt)
   PAYLOAD_FORMAT=$(cat clang-format-report.txt)
   PAYLOAD_FORMAT_DETAILS=$(cat clang-format-report-details.txt)
