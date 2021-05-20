@@ -168,10 +168,7 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
     } >> output.txt
   fi
 
-  echo "output.txt:"
-  cat output.txt
-
-  if [[ -f "output.txt" ]]; then
+  if [[ ! -f "output.txt" ]]; then
     echo "Finished! Not found any output."
     echo "---> The scan did not get any error or source code."
     exit 0
