@@ -114,22 +114,22 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
 
     echo "CLang Format:"
     clang-format \
-      --dry-run \
-      --Werror \
       --style=LLVM \
       --sort-includes \
+      --Werror \
+      --dry-run \
       "${FILE}" \
       || echo "File: ${FILE} not formatted!" \
         >> clang-format-report.txt
 
     echo "CLang Format details:"
     clang-format \
-      --dry-run \
-      --Werror \
       --style=LLVM \
       --sort-includes \
+      --Werror \
+      --dry-run \
       "${FILE}" \
-      >> clang-format-details-report.txt
+      2>> clang-format-details-report.txt
   done < committed_files.txt
   rm -f committed_files.json
 
@@ -213,3 +213,4 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
     --data "${PAYLOAD}" \
     "${COMMENTS_URL}"
 fi
+ls -lha .
