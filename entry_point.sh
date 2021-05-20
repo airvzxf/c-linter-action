@@ -93,7 +93,9 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   set -xv
   echo ""
   echo "=== Performing check up ==="
-  C_EXTENSIONS=$(echo "*.c"{,++,c,p,pp,u,uh,x,xx} "*.h"{,++,h,p,pp,x,xx})
+  C_EXTENSIONS=$(
+    echo -n \\.c{,c,p,pp,u,uh,x,xx}"$|" \\.h{,h,p,pp,x,xx}"$|" | sed -E 's/ //g;s/\|$//g'
+  )
   while IFS= read -r FILE; do
     echo ""
     echo "FILE: ${FILE}"
@@ -106,7 +108,6 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   done < committed_files.txt
   rm -f committed_files.json
 
-  exit 123
   #  echo ""
   #  echo "Running cppcheck:"
   #  cppcheck --enable=all --std=c++11 --language=c++ --output-file=cppcheck-report.txt *.c *.h *.cpp *.hpp *.C *.cc *.CPP *.c++ *.cp *.cxx
