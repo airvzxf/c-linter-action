@@ -122,23 +122,6 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
   PAYLOAD_FORMAT_DETAILS=$(cat clang-format-report-details.txt)
   PAYLOAD_CPPCHECK=$(cat cppcheck-report.txt)
 
-  #  echo ""
-  #  echo "=== Display the reports ==="
-  #  echo "Comments URL:"
-  #  echo "${COMMENTS_URL}"
-  #  echo ""
-  #  echo "Clang-tidy errors:"
-  #  echo "${PAYLOAD_TIDY}"
-  #  echo ""
-  #  echo "Clang-format errors:"
-  #  echo "${PAYLOAD_FORMAT}"
-  #  echo ""
-  #  echo "Clang-format details errors:"
-  #  echo "${PAYLOAD_FORMAT_DETAILS}"
-  #  echo ""
-  #  echo "Cppcheck errors:"
-  #  echo "${PAYLOAD_CPPCHECK}"
-
   echo ""
   echo "=== Generate the output ==="
   if [[ -n ${PAYLOAD_TIDY} ]]; then
@@ -150,10 +133,6 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
       echo '```'
       echo ""
     } >> output.txt
-    OUTPUT=$'**CLANG-TIDY WARNINGS**:\n'
-    OUTPUT+=$'\n```\n'
-    OUTPUT+=${PAYLOAD_TIDY}
-    OUTPUT+=$'\n```\n'
   fi
 
   if [[ -n ${PAYLOAD_FORMAT} ]]; then
@@ -165,10 +144,6 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
       echo '```'
       echo ""
     } >> output.txt
-    OUTPUT=$'**CLANG-FORMAT WARNINGS**:\n'
-    OUTPUT+=$'\n```\n'
-    OUTPUT+=${PAYLOAD_FORMAT}
-    OUTPUT+=$'\n```\n'
   fi
 
   if [[ -n ${PAYLOAD_FORMAT_DETAILS} ]]; then
@@ -191,16 +166,12 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
       echo '```'
       echo ""
     } >> output.txt
-    OUTPUT+=$'\n**CPPCHECK WARNINGS**:\n'
-    OUTPUT+=$'\n```\n'
-    OUTPUT+=${PAYLOAD_CPPCHECK}
-    OUTPUT+=$'\n```\n'
   fi
 
-  echo "OUTPUT is:"
-  echo "${OUTPUT}"
+  echo "output.txt:"
+  cat output.txt
 
-  if [[ -z ${OUTPUT} ]]; then
+  if [[ -f "output.txt" ]]; then
     echo "Finished! Not found any output."
     echo "---> The scan did not get any error or source code."
     exit 0
@@ -208,17 +179,19 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
 
   echo ""
   echo "=== Generate the payload ==="
-  PAYLOAD=$(echo '{}' | jq --arg body "${OUTPUT}" '.body = $body')
+  PAYLOAD=$(echo '{}' | jq --arg body "$(cat output.txt)" '.body = $body')
   echo "PAYLOAD:"
   echo "${PAYLOAD}"
 
-  cat output.txt
   rm -f output.txt
-
   exit 123
 
   echo ""
   echo "=== Send the payload to GitHub API ==="
   COMMENTS_URL=$(jq < "${GITHUB_EVENT_PATH}" -r .pull_request.comments_url)
-  curl -s -S -H "Authorization: token ${GITHUB_TOKEN}" --header "Content-Type: application/vnd.github.VERSION.text+json" --data "${PAYLOAD}" "${COMMENTS_URL}"
+  curl -s -S \
+    -H "Authorization: token ${GITHUB_TOKEN}" \
+    --header "Content-Type: application/vnd.github.VERSION.text+json" \
+    --data "${PAYLOAD}" \
+    "${COMMENTS_URL}"
 fi
