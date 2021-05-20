@@ -135,10 +135,12 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
       echo "**CLANG-FORMAT WARNINGS**:"
       echo ""
       echo "For more information execute:"
-      echo '---> `clang-format --style=LLVM --sort-includes --Werror --dry-run file.c`'
+      # shellcheck disable=SC2016
+      echo '📝--> `clang-format --style=LLVM --sort-includes --Werror --dry-run file.c`'
       echo ""
       echo "If you want to do some automatically fixes, try this:"
-      echo '---> `clang-format -i --style=LLVM --sort-includes file.c`'
+      # shellcheck disable=SC2016
+      echo '🔧--> `clang-format -i --style=LLVM --sort-includes file.c`'
       echo ""
       echo '```text'
       echo "${PAYLOAD_FORMAT}"
@@ -167,10 +169,12 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
       echo "**CLANG-TIDY WARNINGS**:"
       echo ""
       echo "For more information execute:"
-      echo '---> `clang-tidy --format-style=llvm --warnings-as-errors=* --header-filter=.* --checks=* file.c -- file.c`'
+      # shellcheck disable=SC2016
+      echo '📝--> `clang-tidy --format-style=llvm --warnings-as-errors=* --header-filter=.* --checks=* file.c -- file.c`'
       echo ""
       echo "If you want to do some automatically fixes, try this:"
-      echo '---> `clang-tidy --fix --fix-errors --format-style=llvm --header-filter=.* --checks=* file.c -- file.c`'
+      # shellcheck disable=SC2016
+      echo '🔧--> `clang-tidy --fix --fix-errors --format-style=llvm --header-filter=.* --checks=* file.c -- file.c`'
       echo ""
       echo '```text'
       echo "${PAYLOAD_TIDY}"
@@ -186,27 +190,28 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
     exit 0
   fi
 
+  echo ""
+  echo "=== Error message: Generate the payload ==="
+  {
+    echo "😢 Sorry, your code did not pass the quality scanners."
     echo ""
-    echo "=== Error message: Generate the payload ==="
-    {
-      echo "😢 Sorry, you code not pass the quality scanners."
-      echo ""
-      echo "The \`bot\` will comment below the errors and how you can check in your local or fix."
-      echo ""
-      echo "Thanks! 🦥"
-      echo ""
-    } >> error_message.txt
-    PAYLOAD=$(echo '{}' | jq -n --arg body "$(cat error_message.txt)" '.body = $body')
-    rm -f error_message.txt
+    # shellcheck disable=SC2016
+    echo 'The `bot` will comment below the errors and how you can check in your local or fix.'
+    echo ""
+    echo "Thanks! 🦥"
+    echo ""
+  } >> error_message.txt
+  PAYLOAD=$(echo '{}' | jq -n --arg body "$(cat error_message.txt)" '.body = $body')
+  rm -f error_message.txt
 
-    echo ""
-    echo "=== Error message: Send the payload to GitHub API ==="
-    COMMENTS_URL=$(jq < "${GITHUB_EVENT_PATH}" -r .pull_request.comments_url)
-    curl -s -S \
-      -H "Authorization: token ${GITHUB_TOKEN}" \
-      --header "Content-Type: application/vnd.github.VERSION.text+json" \
-      --data "${PAYLOAD}" \
-      "${COMMENTS_URL}"
+  echo ""
+  echo "=== Error message: Send the payload to GitHub API ==="
+  COMMENTS_URL=$(jq < "${GITHUB_EVENT_PATH}" -r .pull_request.comments_url)
+  curl -s -S \
+    -H "Authorization: token ${GITHUB_TOKEN}" \
+    --header "Content-Type: application/vnd.github.VERSION.text+json" \
+    --data "${PAYLOAD}" \
+    "${COMMENTS_URL}"
 
   REPORT_FILES="clang-format-report.txt cppcheck-report.txt clang-tidy-report.txt"
   for REPORT_FILE in ${REPORT_FILES}; do
