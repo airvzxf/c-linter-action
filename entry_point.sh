@@ -148,7 +148,7 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
       echo '```'
       echo ""
       IS_REPORTED="true"
-    } >> clang-format-report.txt
+    } > clang-format-report.txt
   fi
 
   if [[ -n ${PAYLOAD_FORMAT_DETAILS} ]]; then
@@ -160,7 +160,7 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
       echo '```'
       echo ""
       IS_REPORTED="true"
-    } >> clang-format-details-report.txt
+    } > clang-format-details-report.txt
   fi
 
   if [[ -n ${PAYLOAD_CPPCHECK} ]]; then
@@ -172,7 +172,7 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
       echo '```'
       echo ""
       IS_REPORTED="true"
-    } >> cppcheck-report.txt
+    } > cppcheck-report.txt
   fi
 
   echo ""
@@ -186,7 +186,7 @@ if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
       echo '```'
       echo ""
       IS_REPORTED="true"
-    } >> clang-tidy-report.txt
+    } > clang-tidy-report.txt
   fi
 
   if [[ ${IS_REPORTED} != "true" ]]; then
