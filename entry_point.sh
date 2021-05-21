@@ -122,10 +122,11 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
   rm -f committed_files.json
 
   echo ""
-  echo "=== Performing CPP Check check up ==="
+  echo "=== Install optional packages  ==="
+  sudo apt --assume-yes install libbluetooth-dev
 
   echo ""
-  echo "Build the application:"
+  echo "=== Build the application ==="
   cmake -DCMAKE_BUILD_TYPE=Release -G "CodeBlocks - Unix Makefiles" src
   cmake --build cmake-build-release --target bose-connect-app-linux -- -j "$(nproc)"
   # ls -lhaR .
@@ -133,7 +134,7 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
   exit 125
 
   echo ""
-  echo "CPP Check:"
+  echo "=== Performing CPP Check check up ==="
   cppcheck \
     --language=c \
     --std=c11 \
