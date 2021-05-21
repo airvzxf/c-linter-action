@@ -207,8 +207,16 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
       echo ""
       echo "For more information execute:"
       # shellcheck disable=SC2016
-      echo '📝 `cppcheck --language=c --std=c11 --platform=unix64 --library=boost.cfg --library=cppcheck-lib.cfg --library=cppunit.cfg --library=gnu.cfg --library=libcerror.cfg --library=posix.cfg --library=std.cfg --enable=all --inconclusive --force --max-ctu-depth=1000000 --project=build/compile_commands.json`'
-      echo "_**Note**: First you need to build your project with the 'COMPILE_COMMANDS' and set this path to the argument '--project='._"
+      echo '📝 `cppcheck --language=c --std=c11 --platform=unix64 --library=boost.cfg' \
+        ' --library=cppcheck-lib.cfg --library=cppunit.cfg --library=gnu.cfg' \
+        ' --library=libcerror.cfg --library=posix.cfg --library=std.cfg --enable=all' \
+        ' --inconclusive --force --max-ctu-depth=1000000' \
+        ' --project=build/compile_commands.json`'
+      echo ""
+      # shellcheck disable=SC2016
+      echo '_**Note**: First you need to build your project with the `COMPILE_COMMANDS`' \
+        ' and set this path to the argument ' \
+        '`--project=the_build_folder/compile_commands.json`._'
       echo ""
       echo '```text'
       echo "${PAYLOAD_CPPCHECK}"
@@ -252,7 +260,7 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
     echo "😢 Sorry, your code did not pass the quality scanners."
     echo ""
     # shellcheck disable=SC2016
-    echo 'The `bot` will comment below the errors and how you can check in your local or fix.'
+    echo 'The `bot` will comment below the errors and how you can check or fix they in your local.'
     echo ""
     echo "Thanks! 🦥"
     echo ""
