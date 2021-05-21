@@ -123,8 +123,8 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
 
   echo ""
   echo "Build the application:"
-  cmake3 -DCMAKE_BUILD_TYPE=Release -G "CodeBlocks - Unix Makefiles" src
-  cmake3 --build cmake-build-release --target bose-connect-app-linux -- -j "$(nproc)"
+  cmake -DCMAKE_BUILD_TYPE=Release -G "CodeBlocks - Unix Makefiles" src
+  cmake --build cmake-build-release --target bose-connect-app-linux -- -j "$(nproc)"
   ls -lhaR .
 
   echo ""
@@ -147,11 +147,11 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
     --template="----------\n{file}\nMessage: {message}\n  Check: {severity} -> {id}\n  Stack: {callstack}\n   Line: {line}:{column}\n{code}\n" \
     --template-location="----------\n{file}\nNote: {info}\nLine: {line}:{column}\n{code}\n" \
     --project=src/cmake-build-release/compile_commands.json
-    . 2> cppcheck-report.txt
+  . 2> cppcheck-report.txt
 
-    ls -lha cppcheck-report.txt
-    cat cppcheck-report.txt
-    exit 123
+  ls -lha cppcheck-report.txt
+  cat cppcheck-report.txt
+  exit 123
 
   echo ""
   echo "=== Set payloads per package ==="
