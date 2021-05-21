@@ -161,8 +161,6 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
 
   sed --in-place -z "s|${PWD}/||g" cppcheck-full-report.txt
 
-  echo "src/main.c" > committed_files.txt
-  echo "src/CMakeLists.txt" >> committed_files.txt
   while IFS= read -r FILE; do
     echo ""
     echo "FILE: ${FILE}"
