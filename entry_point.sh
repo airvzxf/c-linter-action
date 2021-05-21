@@ -136,7 +136,7 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
   # TODO: Add this variable as argument in the action.
   INPUT_BUILD_TYPE="Release"
   cmake \
-    -S src \
+    -S "${INPUT_PROJECT_PATH}" \
     -B build \
     -DCMAKE_BUILD_TYPE="${INPUT_BUILD_TYPE}" \
     -G "CodeBlocks - Unix Makefiles"

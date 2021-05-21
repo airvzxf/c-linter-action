@@ -35,10 +35,20 @@ jobs:
 
 Option | Description | Required | Default | Example
 ---    | ---         | ---      | ---     | ---
-project_path | Project Directory. | No | ./ | src/
+project_path | Project Directory. [See reference](#project_path) | No | ./ | src/
 clang_tidy_options | Options for CLang Tidy. | No | --warnings-as-errors=* --header-filter=.* --checks=* | --checks=-clang-analyzer-cplusplus*
 clang_format_options | Options for CLang Format. | No | --style=LLVM --sort-includes | --style=Mozilla
 cppcheck_options | Options for CPP Check. | No | --xxx | --yyy
+
+### Settings review
+
+#### project_path
+
+The directory which contain the C/C++ source files and could have the CMake or Make files.
+
+#### Setting: cppcheck_options
+
+Options to execute the `cppcheck` tool.
 
 ## Tools
 
