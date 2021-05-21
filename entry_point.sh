@@ -123,17 +123,13 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
 
   echo ""
   echo "=== Install optional packages  ==="
-  whoami
-  echo ""
-  apt search libbluetooth-dev
-  echo ""
   apt --assume-yes install libbluetooth-dev
 
   echo ""
   echo "=== Build the application ==="
   cmake -DCMAKE_BUILD_TYPE=Release -G "CodeBlocks - Unix Makefiles" src
   cmake --build cmake-build-release --target bose-connect-app-linux -- -j "$(nproc)"
-  # ls -lhaR .
+   ls -lhaR .
 
   exit 125
 
