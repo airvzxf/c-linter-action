@@ -10,7 +10,7 @@ LABEL maintainer="Israel Roldan <israel.alberto.rv@gmail.com>"
 
 RUN apt update
 RUN apt --assume-yes install \
-        curl jq cmake clang clang-tidy clang-format cppcheck
+        curl jq cmake clang clang-tidy clang-format cppcheck pkg-config
 
 WORKDIR /build
 COPY entry_point.sh /entrypoint.sh
