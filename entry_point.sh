@@ -6,7 +6,8 @@ echo "INPUT_PROJECT_PATH:      ${INPUT_PROJECT_PATH}"
 echo "INPUT_CHECK_ALL_FILES:   ${INPUT_CHECK_ALL_FILES}"
 echo "GITHUB_EVENT_NAME:       ${GITHUB_EVENT_NAME}"
 echo "INPUT_CPPCHECK_OPTIONS:  ${INPUT_CPPCHECK_OPTIONS}"
-echo "INPUT_CPPCHECK_OPTIONS:  ${INPUT_INSTALL_PACKAGES}"
+echo "INPUT_BUILD_TYPE:        ${INPUT_BUILD_TYPE}"
+echo "INPUT_INSTALL_PACKAGES:  ${INPUT_INSTALL_PACKAGES}"
 
 if [[ ${INPUT_CHECK_ALL_FILES} == "true" ]]; then
   echo ""
@@ -125,15 +126,19 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
   echo "=== Install optional packages  ==="
   # TODO: Needs to add this parameter in the Action
   INPUT_INSTALL_PACKAGES="libbluetooth-dev"
-  apt --assume-yes install "${INPUT_INSTALL_PACKAGES}"
+  if [[ -n ${INPUT_INSTALL_PACKAGES} ]]; then
+    apt --assume-yes install "${INPUT_INSTALL_PACKAGES}"
+  fi
 
   echo ""
   echo "=== Build the application ==="
   rm -fR build
+  # TODO: Add this variable as argument in the action.
+  INPUT_BUILD_TYPE="Release"
   cmake \
     -S src \
     -B build \
-    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_BUILD_TYPE="${INPUT_BUILD_TYPE}" \
     -G "CodeBlocks - Unix Makefiles"
   cmake --build build -- -j "$(nproc)"
 
