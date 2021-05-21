@@ -175,12 +175,6 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
   rm -f committed_files.txt
 
   echo ""
-  echo "Display cppcheck-report.txt"
-  cat cppcheck-report.txt
-
-  exit 123
-
-  echo ""
   echo "=== Set payloads per package ==="
   PAYLOAD_TIDY=$(cat clang-tidy-report.txt)
   PAYLOAD_FORMAT=$(cat clang-format-report.txt)
@@ -189,7 +183,7 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
 
   if [[ -n ${PAYLOAD_FORMAT} ]]; then
     {
-      echo "**CLANG-FORMAT WARNINGS**:"
+      echo "**CLANG-FORMAT REPORT**:"
       echo ""
       echo "For more information execute:"
       # shellcheck disable=SC2016
@@ -209,7 +203,12 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
 
   if [[ -n ${PAYLOAD_CPPCHECK} ]]; then
     {
-      echo "**CPPCHECK WARNINGS**:"
+      echo "**CPP CHECK REPORT**:"
+      echo ""
+      echo "For more information execute:"
+      # shellcheck disable=SC2016
+      echo '📝 `cppcheck --language=c --std=c11 --platform=unix64 --library=boost.cfg --library=cppcheck-lib.cfg --library=cppunit.cfg --library=gnu.cfg --library=libcerror.cfg --library=posix.cfg --library=std.cfg --enable=all --inconclusive --force --max-ctu-depth=1000000 --project=build/compile_commands.json`'
+      echo "_**Note**: First you need to build your project with the 'COMPILE_COMMANDS' and set this path to the argument '--project='._"
       echo ""
       echo '```text'
       echo "${PAYLOAD_CPPCHECK}"
@@ -223,7 +222,7 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
   echo "=== Generate the output ==="
   if [[ -n ${PAYLOAD_TIDY} ]]; then
     {
-      echo "**CLANG-TIDY WARNINGS**:"
+      echo "**CLANG-TIDY REPORT**:"
       echo ""
       echo "For more information execute:"
       # shellcheck disable=SC2016
