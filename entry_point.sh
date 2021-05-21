@@ -123,9 +123,11 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
 
   echo ""
   echo "=== Install optional packages  ==="
-  sudo apt search libbluetooth-dev
+  whoami
   echo ""
-  sudo apt --assume-yes install libbluetooth-dev
+  apt search libbluetooth-dev
+  echo ""
+  apt --assume-yes install libbluetooth-dev
 
   echo ""
   echo "=== Build the application ==="
