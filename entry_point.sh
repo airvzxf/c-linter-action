@@ -166,10 +166,10 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
   while IFS= read -r FILE; do
     echo ""
     echo "FILE: ${FILE}"
-    if [[ ${FILE,,} =~ ${C_EXTENSIONS} ]]; then
+    if [[ ! ${FILE,,} =~ ${C_EXTENSIONS} ]]; then
       continue
     fi
-    echo "NOTICE: Removed the reference file '${FILE}' from the report."
+    echo "NOTICE: Added the reference file '${FILE}' into the report."
     grep -Poz "(?s)----------\n${FILE}.+?(?>\n\n)" cppcheck-full-report.txt >> cppcheck-report.txt
   done < committed_files.txt
   rm -f committed_files.txt
