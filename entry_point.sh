@@ -6,6 +6,7 @@ echo "INPUT_PROJECT_PATH:      ${INPUT_PROJECT_PATH}"
 echo "INPUT_CHECK_ALL_FILES:   ${INPUT_CHECK_ALL_FILES}"
 echo "GITHUB_EVENT_NAME:       ${GITHUB_EVENT_NAME}"
 echo "INPUT_CPPCHECK_OPTIONS:  ${INPUT_CPPCHECK_OPTIONS}"
+echo "INPUT_CPPCHECK_OPTIONS:  ${INPUT_INSTALL_PACKAGES}"
 
 if [[ ${INPUT_CHECK_ALL_FILES} == "true" ]]; then
   echo ""
@@ -119,20 +120,22 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
       || echo "File: ${FILE} not formatted!" \
         >> clang-format-report.txt
   done < committed_files.txt
-  rm -f committed_files.json
 
   echo ""
   echo "=== Install optional packages  ==="
-  apt --assume-yes install libbluetooth-dev
+  # TODO: Needs to add this parameter in the Action
+  INPUT_INSTALL_PACKAGES="libbluetooth-dev"
+  apt --assume-yes install "${INPUT_INSTALL_PACKAGES}"
 
   echo ""
   echo "=== Build the application ==="
-  cmake -DCMAKE_BUILD_TYPE=Release -G "CodeBlocks - Unix Makefiles" src
-  cmake --build cmake-build-release --target bose-connect-app-linux -- -j "$(nproc)"
-  pwd
-  ls -lhaR .
-
-  exit 125
+  rm -fR build
+  cmake \
+    -S src \
+    -B build \
+    -DCMAKE_BUILD_TYPE=Release \
+    -G "CodeBlocks - Unix Makefiles"
+  cmake --build build -- -j "$(nproc)"
 
   echo ""
   echo "=== Performing CPP Check check up ==="
@@ -153,11 +156,28 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
     --max-ctu-depth=1000000 \
     --template="----------\n{file}\nMessage: {message}\n  Check: {severity} -> {id}\n  Stack: {callstack}\n   Line: {line}:{column}\n{code}\n" \
     --template-location="----------\n{file}\nNote: {info}\nLine: {line}:{column}\n{code}\n" \
-    --project=src/cmake-build-release/compile_commands.json
-  . 2> cppcheck-report.txt
+    --project=build/compile_commands.json \
+    2> cppcheck-full-report.txt
 
-  ls -lha cppcheck-report.txt
+  sed --in-place -z "s|${PWD}/||g" cppcheck-full-report.txt
+
+  echo "src/main.c" > committed_files.txt
+  echo "src/CMakeLists.txt" >> committed_files.txt
+  while IFS= read -r FILE; do
+    echo ""
+    echo "FILE: ${FILE}"
+    if [[ ${FILE,,} =~ ${C_EXTENSIONS} ]]; then
+      continue
+    fi
+    echo "NOTICE: Removed the reference file '${FILE}' from the report."
+    grep -Poz "(?s)----------\n${FILE}.+?(?>\n\n)" cppcheck-full-report.txt >> cppcheck-report.txt
+  done < committed_files.txt
+  rm -f committed_files.txt
+
+  echo ""
+  echo "Display cppcheck-report.txt"
   cat cppcheck-report.txt
+
   exit 123
 
   echo ""
