@@ -85,7 +85,7 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
   rm -f github_files.json
 
   echo ""
-  echo "=== Performing check up ==="
+  echo "=== Performing CLang check up ==="
   C_EXTENSIONS=$(
     echo -n \\.c{,c,p,pp,u,uh,x,xx}"$|" \\.h{,h,p,pp,x,xx}"$|" | sed -E 's/ //g;s/\|$//g'
   )
@@ -120,6 +120,9 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
         >> clang-format-report.txt
   done < committed_files.txt
   rm -f committed_files.json
+
+  echo ""
+  echo "=== Performing CPP Check check up ==="
 
   echo ""
   echo "Build the application:"
