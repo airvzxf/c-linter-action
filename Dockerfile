@@ -8,6 +8,8 @@ LABEL com.github.actions.color="green"
 LABEL repository="https://github.com/airvzxf/c-linter-action"
 LABEL maintainer="Israel Roldan <israel.alberto.rv@gmail.com>"
 
+ARG DEBIAN_FRONTEND=noninteractive
+
 RUN apt update
 RUN apt --assume-yes install \
         curl jq cmake clang clang-tidy clang-format cppcheck pkg-config

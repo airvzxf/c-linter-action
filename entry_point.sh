@@ -128,7 +128,9 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
   echo "Build the application:"
   cmake -DCMAKE_BUILD_TYPE=Release -G "CodeBlocks - Unix Makefiles" src
   cmake --build cmake-build-release --target bose-connect-app-linux -- -j "$(nproc)"
-  ls -lhaR .
+  # ls -lhaR .
+
+  exit 125
 
   echo ""
   echo "CPP Check:"
