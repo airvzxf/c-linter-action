@@ -98,6 +98,7 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
       continue
     fi
 
+    echo ""
     echo "CLang Tidy:"
     clang-tidy \
       --format-style=llvm \
@@ -107,6 +108,7 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
       "${FILE}" -- "${FILE}" \
       >> clang-tidy-report.txt
 
+    echo ""
     echo "CLang Format:"
     clang-format \
       --style=LLVM \
@@ -119,9 +121,37 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
   done < committed_files.txt
   rm -f committed_files.json
 
-  #  echo ""
-  #  echo "Running cppcheck:"
-  #  cppcheck --enable=all --std=c++11 --language=c++ --output-file=cppcheck-report.txt *.c *.h *.cpp *.hpp *.C *.cc *.CPP *.c++ *.cp *.cxx
+  echo ""
+  echo "Build the application:"
+  cmake -DCMAKE_BUILD_TYPE=Release -G "CodeBlocks - Unix Makefiles" src
+  cmake --build cmake-build-release --target bose-connect-app-linux -- -j "$(nproc)"
+  ls -lhaR .
+
+  echo ""
+  echo "CPP Check:"
+  cppcheck \
+    --language=c \
+    --std=c11 \
+    --platform=unix64 \
+    --library=boost.cfg \
+    --library=cppcheck-lib.cfg \
+    --library=cppunit.cfg \
+    --library=gnu.cfg \
+    --library=libcerror.cfg \
+    --library=posix.cfg \
+    --library=std.cfg \
+    --enable=all \
+    --inconclusive \
+    --force \
+    --max-ctu-depth=1000000 \
+    --template="----------\n{file}\nMessage: {message}\n  Check: {severity} -> {id}\n  Stack: {callstack}\n   Line: {line}:{column}\n{code}\n" \
+    --template-location="----------\n{file}\nNote: {info}\nLine: {line}:{column}\n{code}\n" \
+    --project=src/cmake-build-release/compile_commands.json
+    . 2> cppcheck-report.txt
+
+    ls -lha cppcheck-report.txt
+    cat cppcheck-report.txt
+    exit 123
 
   echo ""
   echo "=== Set payloads per package ==="
