@@ -123,6 +123,8 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
 
   echo ""
   echo "=== Install optional packages  ==="
+  sudo apt search libbluetooth-dev
+  echo ""
   sudo apt --assume-yes install libbluetooth-dev
 
   echo ""
