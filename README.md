@@ -39,7 +39,7 @@ Option | Description | Required | Type | Default | Example
 ---    | ---         | ---      | ---  | ---     | ---
 project_path | Source code directory. [Reference](#project_path). | No | String | . | src
 build_type | Build type. [Reference](#build_type). | No | String | Release | Debug
-c_extensions | File extensions for C/C++. [Reference](#c_extensions). | No | String | [Reference](#c_extensions) | .c$&#x7c;.h$&#x7c;.zpp$
+c_extensions | File extensions for C/C++. | No | String | [Reference](#c_extensions) | .c$&#x7c;.h$&#x7c;.zpp$
 clang_tidy_options | Options for CLang Tidy. | No | String | [Reference](#clang_tidy_options) | --checks=*
 clang_format_options | Options for CLang Format. | No | String | [Reference](#clang_format_options) | --style=Mozilla
 cppcheck_options | Options for CPP Check. | No | String | [Reference](#cppcheck_options) | --enable=style
@@ -114,7 +114,7 @@ Example of the execution of this setting:
 
 ---
 
-Set options to the CLang Tidy command. See the [tool reference](clang-tidy) for it.
+Set options to the CLang Tidy command. See the [tool reference](#clang-tidy) for it.
 
 The default values are `--format-style=llvm --warnings-as-errors=* --header-filter=.* --checks=*`.
 
@@ -131,7 +131,7 @@ eval "clang-tidy ${clang_tidy_options} fie.c -- file.c >> clang-tidy-report.txt"
 
 ---
 
-Set options to the CLang Format command. See the [tool reference](clang-format) for it.
+Set options to the CLang Format command. See the [tool reference](#clang-format) for it.
 
 The default values are `--style=LLVM --sort-includes --Werror --dry-run`.
 
@@ -148,7 +148,7 @@ eval "clang-format ${clang_format_options} file.c || echo 'Not formatted!' >> cl
 
 ---
 
-Set options to the CPP Check command. See the [tool reference](cpp-check) for it.
+Set options to the CPP Check command. See the [tool reference](#cpp-check) for it.
 
 The default values are:
 
