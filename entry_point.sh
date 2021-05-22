@@ -99,11 +99,11 @@ done < unique_files.txt
 rm -f unique_files.txt
 
 echo ""
-echo "=== List file committed_files.txt ==="
+echo "=== List the file committed files ==="
 ls -lha committed_files.txt
 
 echo ""
-echo "=== Display committed_files.txt ==="
+echo "=== Display committed files ==="
 cat committed_files.txt
 
 echo ""
@@ -124,6 +124,10 @@ if [[ ! -f source_code_files.txt ]]; then
   echo "---> Pattern: ${INPUT_C_EXTENSIONS}."
   exit 0
 fi
+
+echo ""
+echo "=== Display source code files ==="
+cat source_code_files.txt
 
 exit 0
 
