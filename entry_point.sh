@@ -25,12 +25,7 @@ if [[ ${INPUT_SCAN_FULL_PROJECT} == "true" ]]; then
 
   echo ""
   echo "=== Get C/C++ files ==="
-  cd "${INPUT_PROJECT_PATH}" || (
-    echo "ERROR: The project path (${INPUT_PROJECT_PATH}) not exists."
-    ls -lha "${INPUT_PROJECT_PATH}/.."
-    exit 1
-  )
-  FILES=$(find ./ -type f -regextype posix-extended -iregex '.*\.(c|h)?(\+\+|c|p|pp|xx)')
+  FILES=$(find "${INPUT_PROJECT_PATH}" -type f -regextype posix-extended -iregex '.*\.(c|h)?(\+\+|c|p|pp|xx)')
   echo "FILES: ${FILES}"
   echo "${FILES}" > committed_files.txt
 fi
@@ -41,15 +36,16 @@ if [[ ${GITHUB_EVENT_NAME} == "push" ]]; then
 
   echo ""
   echo "=== Get commits on this push ==="
-  GITHUB_COMMITS_ID=$(jq -r '.commits[] | .id' "${GITHUB_EVENT_PATH}")
-  echo "GITHUB_COMMITS_ID: ${GITHUB_COMMITS_ID}"
+  COMMITS_ID=$(jq -r '.commits[] | .id' "${GITHUB_EVENT_PATH}")
+  echo "COMMITS_ID:"
+  echo "${COMMITS_ID}"
 
   echo ""
   echo "=== Get files per commit ==="
-  for GITHUB_COMMIT_ID in ${GITHUB_COMMITS_ID}; do
-    echo "GITHUB_COMMIT_ID: ${GITHUB_COMMIT_ID}"
+  for COMMIT_ID in ${COMMITS_ID}; do
+    echo "COMMIT_ID: ${COMMIT_ID}"
     curl --silent \
-      "https://api.github.com/repos/airvzxf/bose-connect-app-linux/commits/${GITHUB_COMMIT_ID}" \
+      "https://api.github.com/repos/airvzxf/bose-connect-app-linux/commits/${COMMIT_ID}" \
       > commit.json
     jq -r '.files[] | select(.status != "deleted") | .filename' commit.json >> committed_files.txt
     rm -f commit.json
@@ -61,13 +57,13 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
   echo "=== GitHub Event: Pull request ==="
 
   echo ""
-  echo "=== Get committed files in JSON format ==="
-  GITHUB_FILES_JSON=$(jq -r '.pull_request._links.self.href' "${GITHUB_EVENT_PATH}")/files
-  echo "GitHub files in JSON: ${GITHUB_FILES_JSON}"
+  echo "=== Get committed files link ==="
+  PULL_REQUEST_FILES_LINK=$(jq -r '.pull_request._links.self.href' "${GITHUB_EVENT_PATH}")/files
+  echo "Pull request files link: ${PULL_REQUEST_FILES_LINK}"
 
   echo ""
   echo "=== Get committed files ==="
-  curl --silent "${GITHUB_FILES_JSON}" > github_files.json
+  curl --silent "${PULL_REQUEST_FILES_LINK}" > github_files.json
   FILES_LIST=$(jq -r '.[].filename' github_files.json)
   echo "${FILES_LIST}" > committed_files.txt
   rm -f github_files.json
