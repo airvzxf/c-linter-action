@@ -109,6 +109,7 @@ while IFS= read -r FILE; do
   fi
   echo "${FILE}" >> source_code_files.txt
 done < committed_files.txt
+rm -f committed_files.txt
 
 echo ""
 echo "=== Validate if not exists any source code file ==="
@@ -121,12 +122,7 @@ fi
 echo ""
 echo "=== Performing CLang check up ==="
 while IFS= read -r FILE; do
-  echo ""
   echo "FILE: ${FILE}"
-  if [[ ! ${FILE,,} =~ ${INPUT_C_EXTENSIONS} ]]; then
-    echo "NOTICE: The file is not matching with the C/C++ files."
-    continue
-  fi
 
   echo ""
   echo "CLang Tidy:"
@@ -161,13 +157,9 @@ eval "cppcheck ${INPUT_CPPCHECK_OPTIONS} 2> cppcheck-full-report.txt"
 
 sed --in-place -z "s|${PWD}/||g" cppcheck-full-report.txt
 
+echo ""
 while IFS= read -r FILE; do
-  echo ""
   echo "FILE: ${FILE}"
-  if [[ ! ${FILE,,} =~ ${INPUT_C_EXTENSIONS} ]]; then
-    echo "NOTICE: The file is not matching with the C/C++ files."
-    continue
-  fi
   grep -Poz "(?s)----------\n${FILE}.+?(?>\n\n)" cppcheck-full-report.txt >> cppcheck-report.txt
 done < source_code_files.txt
 rm -f source_code_files.txt
@@ -301,3 +293,5 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
       "${COMMENTS_URL}"
   done
 fi
+
+ls -lha .
