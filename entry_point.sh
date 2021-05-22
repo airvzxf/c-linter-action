@@ -46,10 +46,14 @@ if [[ ${GITHUB_EVENT_NAME} == "push" ]]; then
   echo "=== X1 ==="
   cat "${GITHUB_EVENT_PATH}"
 
-#  echo ""
-#  echo "=== Get committed files in JSON format ==="
-#  GITHUB_FILES_JSON=$(jq -r '.pull_request._links.self.href' "${GITHUB_EVENT_PATH}")/files
-#  echo "GitHub files in JSON: ${GITHUB_FILES_JSON}"
+  echo ""
+  echo "=== X2 ==="
+  printenv
+
+  # echo ""
+  # echo "=== Get committed files in JSON format ==="
+  # GITHUB_FILES_JSON=$(jq -r '.pull_request._links.self.href' "${GITHUB_EVENT_PATH}")/files
+  # echo "GitHub files in JSON: ${GITHUB_FILES_JSON}"
 
   exit 0
 fi
