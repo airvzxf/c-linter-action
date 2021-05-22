@@ -12,6 +12,13 @@ echo "INPUT_CPPCHECK_OPTIONS:     ${INPUT_CPPCHECK_OPTIONS}"
 echo "INPUT_INSTALL_PACKAGES:     ${INPUT_INSTALL_PACKAGES}"
 echo "GITHUB_EVENT_NAME:          ${GITHUB_EVENT_NAME}"
 
+if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
+  if [[ -z ${GITHUB_TOKEN} ]]; then
+    echo "ERROR: The GITHUB_TOKEN is required for the Pull Request check."
+    exit 1
+  fi
+fi
+
 if [[ ${INPUT_SCAN_FULL_PROJECT} == "true" ]]; then
   echo ""
   echo "=== Check all source code files ==="
@@ -26,55 +33,29 @@ if [[ ${INPUT_SCAN_FULL_PROJECT} == "true" ]]; then
   FILES=$(find ./ -type f -regextype posix-extended -iregex '.*\.(c|h)?(\+\+|c|p|pp|xx)')
   echo "FILES: ${FILES}"
   echo "${FILES}" > source_code_files.txt
-  echo "-----"
-  cat source_code_files.txt
-
-  echo ""
-  echo "=== Performing checkup ==="
-  while IFS= read -r FILE; do
-    echo "FILE: ---${FILE}---"
-  done < source_code_files.txt
-  rm -f source_code_files.txt
 fi
 
-echo ""
-echo "-------------- v1.0.1 --------------"
 if [[ ${GITHUB_EVENT_NAME} == "push" ]]; then
-  echo "TODO: Needs to add the code to scan when the GitHub event is pushed."
+  echo ""
+  echo "=== GitHub Event: Push ==="
 
   echo ""
-  echo "=== X1 ==="
-  cat "${GITHUB_EVENT_PATH}"
+  echo "=== Get commits from head to the last ==="
+  GITHUB_HEAD_COMMIT=$(jq -r '.after' "${GITHUB_EVENT_PATH}")
+  GITHUB_LAST_COMMIT=$(jq -r '.before' "${GITHUB_EVENT_PATH}")
+  echo "GITHUB_HEAD_COMMIT: ${GITHUB_HEAD_COMMIT}"
+  echo "GITHUB_LAST_COMMIT: ${GITHUB_LAST_COMMIT}"
 
   echo ""
-  echo "=== X2 ==="
-  printenv
-
-  echo ""
-  echo "=== X3 ==="
-  echo ""
-  echo "GITHUB_ENV:"
-  ls -lha "${GITHUB_ENV}"
-  echo ""
-  echo "GITHUB_EVENT_PATH:"
-  ls -lha "${GITHUB_EVENT_PATH}"
-
-  # echo ""
-  # echo "=== Get committed files in JSON format ==="
-  # GITHUB_FILES_JSON=$(jq -r '.pull_request._links.self.href' "${GITHUB_EVENT_PATH}")/files
-  # echo "GitHub files in JSON: ${GITHUB_FILES_JSON}"
-
-  exit 0
+  echo "=== Get files pushed except the deleted ==="
+  git diff --name-only --diff-filter=ACdMRTUXB \
+    "${GITHUB_HEAD_COMMIT}" "${GITHUB_LAST_COMMIT}" \
+    > source_code_files.txt
 fi
 
 if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
   echo ""
   echo "=== GitHub Event: Pull request ==="
-
-  if [[ -z ${GITHUB_TOKEN} ]]; then
-    echo "ERROR: The GITHUB_TOKEN is required."
-    exit 1
-  fi
 
   echo ""
   echo "=== Get committed files in JSON format ==="
@@ -87,6 +68,53 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
   FILES_LIST=$(jq -r '.[].filename' github_files.json)
   echo "${FILES_LIST}" > source_code_files.txt
   rm -f github_files.json
+fi
+
+if [[ -f source_code_files.txt ]]; then
+  echo "NOTICE: Not found any file to process."
+  return 0
+fi
+
+echo ""
+echo "=== List file source_code_files.txt ==="
+ls -lha source_code_files.txt
+
+echo ""
+echo "source_code_files.txt"
+cat source_code_files.txt
+
+echo ""
+echo "=== Add source files to the list ==="
+IS_SOURCE_CODE_FILE="false"
+while IFS= read -r FILE; do
+  echo ""
+  echo "FILE: ${FILE}"
+  if [[ ! ${FILE,,} =~ ${INPUT_C_EXTENSIONS} ]]; then
+    echo "NOTICE: The file is not matching with the C/C++ files."
+    continue
+  fi
+  IS_SOURCE_CODE_FILE="true"
+done < source_code_files.txt
+
+echo ""
+echo "=== Validate if exists any source code file ==="
+if [[ ${IS_SOURCE_CODE_FILE} != "true" ]]; then
+  rm -f source_code_files.txt
+  echo "NOTICE: Not found any source code file to process."
+  echo "---> Pattern: ${INPUT_C_EXTENSIONS}."
+  exit 0
+fi
+
+exit 0
+
+if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
+  echo ""
+  echo "=== GitHub Event: Pull request ==="
+
+  if [[ -z ${GITHUB_TOKEN} ]]; then
+    echo "ERROR: The GITHUB_TOKEN is required."
+    exit 1
+  fi
 
   echo ""
   echo "=== Performing CLang check up ==="
