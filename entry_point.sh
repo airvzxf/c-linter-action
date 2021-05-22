@@ -40,19 +40,19 @@ if [[ ${GITHUB_EVENT_NAME} == "push" ]]; then
   echo "=== GitHub Event: Push ==="
 
   echo ""
-  echo "=== GITHUB_EVENT_PATH ==="
-  cat "${GITHUB_EVENT_PATH}"
-
-  echo ""
-  echo "=== GITHUB_EVENT_PATH ==="
-  ls -lhaR /github/workflow/
+  echo "=== Get commits from head to the last ==="
+  GITHUB_COMMITS_ID=$(jq -r '.commits | .[].id' "${GITHUB_EVENT_PATH}")
+  echo "GITHUB_COMMITS_ID: ${GITHUB_COMMITS_ID}"
 
   echo ""
   echo "=== Get commits from head to the last ==="
-  GITHUB_HEAD_COMMIT=$(jq -r '.after' "${GITHUB_EVENT_PATH}")
-  GITHUB_LAST_COMMIT=$(jq -r '.before' "${GITHUB_EVENT_PATH}")
-  echo "GITHUB_HEAD_COMMIT: ${GITHUB_HEAD_COMMIT}"
-  echo "GITHUB_LAST_COMMIT: ${GITHUB_LAST_COMMIT}"
+  for GITHUB_COMMIT_ID in ${GITHUB_COMMITS_ID}; do
+    echo "GITHUB_COMMIT_ID: ${GITHUB_COMMIT_ID}"
+    curl "https://api.github.com/repos/airvzxf/bose-connect-app-linux/commits/${GITHUB_COMMIT_ID}" > commit.json
+    GITHUB_COMMITS_FILES=$(jq -r '.files | .[].filename' commit.json)
+    echo "GITHUB_COMMITS_FILES: ${GITHUB_COMMITS_FILES}"
+    rm -f commit.json
+  done
 
   echo ""
   echo "=== Get files pushed except the deleted ==="
