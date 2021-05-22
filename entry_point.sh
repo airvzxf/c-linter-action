@@ -110,15 +110,15 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
     echo ""
     echo "FILE: ${FILE}"
     if [[ ! ${FILE,,} =~ ${INPUT_C_EXTENSIONS} ]]; then
+      echo "NOTICE: The file is not matching with the C/C++ files."
       continue
     fi
-    echo "NOTICE: Added the reference check for '${FILE}' into the report."
     grep -Poz "(?s)----------\n${FILE}.+?(?>\n\n)" cppcheck-full-report.txt >> cppcheck-report.txt
   done < source_code_files.txt
   rm -f source_code_files.txt
 
   echo ""
-  echo "=== Set payloads per package ==="
+  echo "=== Set payloads per tool ==="
   PAYLOAD_TIDY=$(cat clang-tidy-report.txt)
   PAYLOAD_FORMAT=$(cat clang-format-report.txt)
   PAYLOAD_CPPCHECK=$(cat cppcheck-report.txt)
