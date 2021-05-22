@@ -32,7 +32,7 @@ if [[ ${INPUT_SCAN_FULL_PROJECT} == "true" ]]; then
   )
   FILES=$(find ./ -type f -regextype posix-extended -iregex '.*\.(c|h)?(\+\+|c|p|pp|xx)')
   echo "FILES: ${FILES}"
-  echo "${FILES}" > source_code_files.txt
+  echo "${FILES}" > committed_files.txt
 fi
 
 if [[ ${GITHUB_EVENT_NAME} == "push" ]]; then
@@ -48,9 +48,21 @@ if [[ ${GITHUB_EVENT_NAME} == "push" ]]; then
 
   echo ""
   echo "=== Get files pushed except the deleted ==="
+  git status
+
+  echo ""
+  echo "=== Get files pushed except the deleted #1 ==="
+  echo "git diff --name-only --diff-filter=ACdMRTUXB ${GITHUB_HEAD_COMMIT} ${GITHUB_LAST_COMMIT}"
+
+  echo ""
+  echo "=== Get files pushed except the deleted #2 ==="
+  git diff --name-only --diff-filter=ACdMRTUXB "${GITHUB_HEAD_COMMIT}" "${GITHUB_LAST_COMMIT}"
+
+  echo ""
+  echo "=== Get files pushed except the deleted #3 ==="
   git diff --name-only --diff-filter=ACdMRTUXB \
     "${GITHUB_HEAD_COMMIT}" "${GITHUB_LAST_COMMIT}" \
-    > source_code_files.txt
+    > committed_files.txt
 fi
 
 if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
@@ -66,40 +78,39 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
   echo "=== Get committed files ==="
   curl "${GITHUB_FILES_JSON}" > github_files.json
   FILES_LIST=$(jq -r '.[].filename' github_files.json)
-  echo "${FILES_LIST}" > source_code_files.txt
+  echo "${FILES_LIST}" > committed_files.txt
   rm -f github_files.json
 fi
 
-if [[ -f source_code_files.txt ]]; then
+if [[ -f committed_files.txt ]]; then
+  echo ""
+  echo "=== Validate committed files ==="
   echo "NOTICE: Not found any file to process."
   return 0
 fi
 
 echo ""
-echo "=== List file source_code_files.txt ==="
-ls -lha source_code_files.txt
+echo "=== List file committed_files.txt ==="
+ls -lha committed_files.txt
 
 echo ""
-echo "source_code_files.txt"
-cat source_code_files.txt
+echo "committed_files.txt"
+cat committed_files.txt
 
 echo ""
-echo "=== Add source files to the list ==="
-IS_SOURCE_CODE_FILE="false"
+echo "=== Add source code files to the list ==="
 while IFS= read -r FILE; do
-  echo ""
   echo "FILE: ${FILE}"
   if [[ ! ${FILE,,} =~ ${INPUT_C_EXTENSIONS} ]]; then
     echo "NOTICE: The file is not matching with the C/C++ files."
     continue
   fi
-  IS_SOURCE_CODE_FILE="true"
-done < source_code_files.txt
+  echo "${FILE}" >> source_code_files.txt
+done < committed_files.txt
 
 echo ""
 echo "=== Validate if exists any source code file ==="
-if [[ ${IS_SOURCE_CODE_FILE} != "true" ]]; then
-  rm -f source_code_files.txt
+if [[ ! -f source_code_files.txt ]]; then
   echo "NOTICE: Not found any source code file to process."
   echo "---> Pattern: ${INPUT_C_EXTENSIONS}."
   exit 0
