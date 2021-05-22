@@ -69,7 +69,7 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
   rm -f github_files.json
 fi
 
-if [[ -f committed_files.txt ]]; then
+if [[ ! -f committed_files.txt ]]; then
   echo ""
   echo "=== Validate committed files ==="
   echo "NOTICE: Not found any file to process."
