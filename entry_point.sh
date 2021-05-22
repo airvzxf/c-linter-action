@@ -154,6 +154,7 @@ cmake --build build -- -j "$(nproc)"
 echo ""
 echo "=== Performing CPP Check check up ==="
 eval "cppcheck ${INPUT_CPPCHECK_OPTIONS} 2> cppcheck-full-report.txt"
+rm -fR build
 
 sed --in-place -z "s|${PWD}/||g" cppcheck-full-report.txt
 
@@ -294,4 +295,6 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
   done
 fi
 
+echo ""
+echo "=== List all files in current directory ==="
 ls -lha .
