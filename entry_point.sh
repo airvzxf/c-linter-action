@@ -12,12 +12,14 @@ echo "INPUT_CPPCHECK_OPTIONS:     ${INPUT_CPPCHECK_OPTIONS}"
 echo "INPUT_INSTALL_PACKAGES:     ${INPUT_INSTALL_PACKAGES}"
 echo "GITHUB_EVENT_NAME:          ${GITHUB_EVENT_NAME}"
 
-if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
+if [[ ${GITHUB_EVENT_NAME} == "push" || ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
   if [[ -z ${GITHUB_TOKEN} ]]; then
     echo "ERROR: The GITHUB_TOKEN is required for the Pull Request check."
     exit 1
   fi
 fi
+
+TEMPORAL_EVENT_NAME="${GITHUB_EVENT_NAME}"
 
 if [[ ${INPUT_SCAN_FULL_PROJECT} == "true" ]]; then
   echo ""
@@ -28,6 +30,7 @@ if [[ ${INPUT_SCAN_FULL_PROJECT} == "true" ]]; then
   FILES=$(find "${INPUT_PROJECT_PATH}" -type f -regextype posix-extended -iregex '.*\.(c|h)?(\+\+|c|p|pp|xx)')
   echo "FILES: ${FILES}"
   echo "${FILES}" > committed_files.txt
+  GITHUB_EVENT_NAME="Renamed temporally"
 fi
 
 if [[ ${GITHUB_EVENT_NAME} == "push" ]]; then
@@ -69,6 +72,8 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
   rm -f github_files.json
 fi
 
+GITHUB_EVENT_NAME="${TEMPORAL_EVENT_NAME}"
+
 if [[ ! -f committed_files.txt ]]; then
   echo ""
   echo "=== Validate committed files ==="
@@ -83,7 +88,7 @@ sort unsorted_files.txt | uniq > unique_files.txt
 rm -f unsorted_files.txt
 
 echo ""
-echo "=== Get existed files ==="
+echo "=== Get files existing in the directory ==="
 while IFS= read -r FILE; do
   echo "FILE: ${FILE}"
   if [[ ! -f ${FILE} ]]; then
@@ -93,14 +98,6 @@ while IFS= read -r FILE; do
   echo "${FILE}" >> committed_files.txt
 done < unique_files.txt
 rm -f unique_files.txt
-
-echo ""
-echo "=== List the file committed files ==="
-ls -lha committed_files.txt
-
-echo ""
-echo "=== Display committed files ==="
-cat committed_files.txt
 
 echo ""
 echo "=== Add source code files to the list ==="
@@ -114,7 +111,7 @@ while IFS= read -r FILE; do
 done < committed_files.txt
 
 echo ""
-echo "=== Validate if exists any source code file ==="
+echo "=== Validate if not exists any source code file ==="
 if [[ ! -f source_code_files.txt ]]; then
   echo "NOTICE: Not found any source code file to process."
   echo "---> Pattern: ${INPUT_C_EXTENSIONS}."
@@ -122,73 +119,62 @@ if [[ ! -f source_code_files.txt ]]; then
 fi
 
 echo ""
-echo "=== Display source code files ==="
-cat source_code_files.txt
+echo "=== Performing CLang check up ==="
+while IFS= read -r FILE; do
+  echo ""
+  echo "FILE: ${FILE}"
+  if [[ ! ${FILE,,} =~ ${INPUT_C_EXTENSIONS} ]]; then
+    echo "NOTICE: The file is not matching with the C/C++ files."
+    continue
+  fi
 
-exit 0
+  echo ""
+  echo "CLang Tidy:"
+  eval "clang-tidy ${INPUT_CLANG_TIDY_OPTIONS} ${FILE} -- ${FILE} " \
+    ">> clang-tidy-report.txt"
+
+  echo ""
+  echo "CLang Format:"
+  eval "clang-format ${INPUT_CLANG_FORMAT_OPTIONS} ${FILE} " \
+    "|| echo \"File: ${FILE} not formatted!\" >> clang-format-report.txt"
+done < source_code_files.txt
+
+echo ""
+echo "=== Install optional packages  ==="
+if [[ -n ${INPUT_INSTALL_PACKAGES} ]]; then
+  apt --assume-yes install "${INPUT_INSTALL_PACKAGES}"
+fi
+
+echo ""
+echo "=== Build the application ==="
+rm -fR build
+cmake \
+  -S "${INPUT_PROJECT_PATH}" \
+  -B build \
+  -DCMAKE_BUILD_TYPE="${INPUT_BUILD_TYPE}" \
+  -G "CodeBlocks - Unix Makefiles"
+cmake --build build -- -j "$(nproc)"
+
+echo ""
+echo "=== Performing CPP Check check up ==="
+eval "cppcheck ${INPUT_CPPCHECK_OPTIONS} 2> cppcheck-full-report.txt"
+
+sed --in-place -z "s|${PWD}/||g" cppcheck-full-report.txt
+
+while IFS= read -r FILE; do
+  echo ""
+  echo "FILE: ${FILE}"
+  if [[ ! ${FILE,,} =~ ${INPUT_C_EXTENSIONS} ]]; then
+    echo "NOTICE: The file is not matching with the C/C++ files."
+    continue
+  fi
+  grep -Poz "(?s)----------\n${FILE}.+?(?>\n\n)" cppcheck-full-report.txt >> cppcheck-report.txt
+done < source_code_files.txt
+rm -f source_code_files.txt
 
 if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
   echo ""
   echo "=== GitHub Event: Pull request ==="
-
-  if [[ -z ${GITHUB_TOKEN} ]]; then
-    echo "ERROR: The GITHUB_TOKEN is required."
-    exit 1
-  fi
-
-  echo ""
-  echo "=== Performing CLang check up ==="
-  while IFS= read -r FILE; do
-    echo ""
-    echo "FILE: ${FILE}"
-    if [[ ! ${FILE,,} =~ ${INPUT_C_EXTENSIONS} ]]; then
-      echo "NOTICE: The file is not matching with the C/C++ files."
-      continue
-    fi
-
-    echo ""
-    echo "CLang Tidy:"
-    eval "clang-tidy ${INPUT_CLANG_TIDY_OPTIONS} ${FILE} -- ${FILE} " \
-      ">> clang-tidy-report.txt"
-
-    echo ""
-    echo "CLang Format:"
-    eval "clang-format ${INPUT_CLANG_FORMAT_OPTIONS} ${FILE} " \
-      "|| echo \"File: ${FILE} not formatted!\" >> clang-format-report.txt"
-  done < source_code_files.txt
-
-  echo ""
-  echo "=== Install optional packages  ==="
-  if [[ -n ${INPUT_INSTALL_PACKAGES} ]]; then
-    apt --assume-yes install "${INPUT_INSTALL_PACKAGES}"
-  fi
-
-  echo ""
-  echo "=== Build the application ==="
-  rm -fR build
-  cmake \
-    -S "${INPUT_PROJECT_PATH}" \
-    -B build \
-    -DCMAKE_BUILD_TYPE="${INPUT_BUILD_TYPE}" \
-    -G "CodeBlocks - Unix Makefiles"
-  cmake --build build -- -j "$(nproc)"
-
-  echo ""
-  echo "=== Performing CPP Check check up ==="
-  eval "cppcheck ${INPUT_CPPCHECK_OPTIONS} 2> cppcheck-full-report.txt"
-
-  sed --in-place -z "s|${PWD}/||g" cppcheck-full-report.txt
-
-  while IFS= read -r FILE; do
-    echo ""
-    echo "FILE: ${FILE}"
-    if [[ ! ${FILE,,} =~ ${INPUT_C_EXTENSIONS} ]]; then
-      echo "NOTICE: The file is not matching with the C/C++ files."
-      continue
-    fi
-    grep -Poz "(?s)----------\n${FILE}.+?(?>\n\n)" cppcheck-full-report.txt >> cppcheck-report.txt
-  done < source_code_files.txt
-  rm -f source_code_files.txt
 
   echo ""
   echo "=== Set payloads per tool ==="
