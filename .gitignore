@@ -1,7 +1,7 @@
-c_files.txt
+source_code_files.txt
 clang-tidy-report.txt
 clang-format-report.txt
-cppcheck-report-individual.txt
+cppcheck-full-report.txt
 cppcheck-report.txt
 .idea/**/workspace.xml
 .idea/**/tasks.xml

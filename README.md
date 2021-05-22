@@ -40,7 +40,7 @@ Option | Description | Required | Type | Default | Example
 scan_full_project | Scan full project. [Reference](#scan_full_project). | No | String | false | true
 project_path | Source code directory. [Reference](#project_path). | No | String | . | src
 build_type | Build type. [Reference](#build_type). | No | String | Release | Debug
-c_extensions | File extensions for C/C++. | No | String | [Reference](#c_extensions) | .c$&#x7c;.h$&#x7c;.zpp$
+c_extensions | File extensions for C/C++. | No | String | [Reference](#c_extensions) | \\.c$&#x7c;\\.h$&#x7c;\\.zpp$
 clang_tidy_options | Options for CLang Tidy. | No | String | [Reference](#clang_tidy_options) | --checks=*
 clang_format_options | Options for CLang Format. | No | String | [Reference](#clang_format_options) | --style=Mozilla
 cppcheck_options | Options for CPP Check. | No | String | [Reference](#cppcheck_options) | --enable=style
@@ -103,8 +103,8 @@ since the filter convert the file name in lowercase.
 
 - Default. It is a `bash` regular expression which start with dot and finish with dollar sign, it is indicating match
   only if the end of the string finish on `.xxx`.
-    - `.c$|.cc$|.cp$|.cpp$|.cu$|.cuh$|.cx$|.cxx$|.h$|.hh$|.hp$|.hpp$|.hx$|.hxx$`
-- Unreal examples: `.doc$|.zip$|.py$`
+    - `\.c$|\.cc$|\.cp$|\.cpp$|\.cu$|\.cuh$|\.cx$|\.cxx$|\.h$|\.hh$|\.hp$|\.hpp$|\.hx$|\.hxx$`
+- Unreal examples: `\.doc$|\.zip$|\.py$`
 
 Example of the execution of this setting:
 

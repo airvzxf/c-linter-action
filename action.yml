@@ -23,7 +23,7 @@ inputs:
     description: 'File extensions for C/C++.'
     required: false
     default: >
-      .c$|.cc$|.cp$|.cpp$|.cu$|.cuh$|.cx$|.cxx$|.h$|.hh$|.hp$|.hpp$|.hx$|.hxx$
+      \.c$|\.cc$|\.cp$|\.cpp$|\.cu$|\.cuh$|\.cx$|\.cxx$|\.h$|\.hh$|\.hp$|\.hpp$|\.hx$|\.hxx$
   clang_tidy_options:
     description: 'Additional options of CLang Tidy.'
     required: false
