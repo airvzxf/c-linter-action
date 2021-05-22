@@ -12,7 +12,7 @@ echo "INPUT_CPPCHECK_OPTIONS:     ${INPUT_CPPCHECK_OPTIONS}"
 echo "INPUT_INSTALL_PACKAGES:     ${INPUT_INSTALL_PACKAGES}"
 echo "GITHUB_EVENT_NAME:          ${GITHUB_EVENT_NAME}"
 
-if [[ ${INPUT_CHECK_ALL_FILES} == "true" ]]; then
+if [[ ${INPUT_SCAN_FULL_PROJECT} == "true" ]]; then
   echo ""
   echo "=== Check all source code files ==="
 
@@ -25,42 +25,16 @@ if [[ ${INPUT_CHECK_ALL_FILES} == "true" ]]; then
   )
   FILES=$(find ./ -type f -regextype posix-extended -iregex '.*\.(c|h)?(\+\+|c|p|pp|xx)')
   echo "FILES: ${FILES}"
-  echo "${FILES}" > c_files.txt
+  echo "${FILES}" > source_code_files.txt
   echo "-----"
-  cat c_files.txt
-
-  echo ""
-  echo "=== Processing #1 ==="
-  while IFS= read -r line; do
-    echo "line #1: ${line}"
-  done < c_files.txt
+  cat source_code_files.txt
 
   echo ""
   echo "=== Performing checkup ==="
   while IFS= read -r FILE; do
     echo "FILE: ---${FILE}---"
-    clang-tidy "${FILE}" -checks=boost-*,bugprone-*,performance-*,readability-*,portability-*,modernize-*,clang-analyzer-cplusplus-*,clang-analyzer-*,cppcoreguidelines-* >> clang-tidy-report.txt
-    clang-format --dry-run -Werror "${FILE}" || echo "File: ${FILE} not formatted!" >> clang-format-report.txt
-    cppcheck --enable=all --std=c++11 --language=c++ "${FILE}" >> cppcheck-report-individual.txt
-  done < c_files.txt
-  cppcheck --enable=all --std=c++11 --language=c++ --output-file=cppcheck-report.txt "${INPUT_PROJECT_PATH}"/*.c "${INPUT_PROJECT_PATH}"/*.h "${INPUT_PROJECT_PATH}"/*.cpp "${INPUT_PROJECT_PATH}"/*.hpp "${INPUT_PROJECT_PATH}"/*.C "${INPUT_PROJECT_PATH}"/*.cc "${INPUT_PROJECT_PATH}"/*.CPP "${INPUT_PROJECT_PATH}"/*.c++ "${INPUT_PROJECT_PATH}"/*.cp "${INPUT_PROJECT_PATH}"/*.cxx
-  rm -f c_files.txt
-
-  echo ""
-  echo "=== Report: Tidy ==="
-  ls -lha clang-tidy-report.txt
-
-  echo ""
-  echo "=== Report: Format ==="
-  cat clang-format-report.txt
-
-  echo ""
-  echo "=== Report: CPP Check #1 ==="
-  cat cppcheck-report-individual.txt
-
-  echo ""
-  echo "=== Report: CPP Check #2 ==="
-  cat cppcheck-report.txt
+  done < source_code_files.txt
+  rm -f source_code_files.txt
 fi
 
 if [[ ${GITHUB_EVENT_NAME} == "push" ]]; then
@@ -86,50 +60,29 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
   echo "=== Get committed files ==="
   curl "${GITHUB_FILES_JSON}" > github_files.json
   FILES_LIST=$(jq -r '.[].filename' github_files.json)
-  echo "${FILES_LIST}" > committed_files.txt
+  echo "${FILES_LIST}" > source_code_files.txt
   rm -f github_files.json
 
   echo ""
   echo "=== Performing CLang check up ==="
-  C_EXTENSIONS=$(
-    echo -n .c{,c,p,pp,u,uh,x,xx}"$|" .h{,h,p,pp,x,xx}"$|" | sed -E 's/ //g;s/\|$//g'
-  )
-  if [[ -n ${INPUT_C_EXTENSIONS} ]]; then
-    C_EXTENSIONS="${INPUT_C_EXTENSIONS}"
-  fi
-
   while IFS= read -r FILE; do
     echo ""
     echo "FILE: ${FILE}"
-    if [[ ! ${FILE,,} =~ ${C_EXTENSIONS} ]]; then
+    if [[ ! ${FILE,,} =~ ${INPUT_C_EXTENSIONS} ]]; then
       echo "NOTICE: The file is not matching with the C/C++ files."
       continue
     fi
 
     echo ""
     echo "CLang Tidy:"
-    CLANG_TIDY_OPTIONS="--format-style=llvm"
-    CLANG_TIDY_OPTIONS+=" --warnings-as-errors=*"
-    CLANG_TIDY_OPTIONS+=" --header-filter=.*"
-    CLANG_TIDY_OPTIONS+=" --checks=*"
-    if [[ -n ${INPUT_CLANG_TIDY_OPTIONS} ]]; then
-      CLANG_TIDY_OPTIONS="${INPUT_CLANG_TIDY_OPTIONS}"
-    fi
-    eval "clang-tidy ${CLANG_TIDY_OPTIONS} ${FILE} -- ${FILE} " \
+    eval "clang-tidy ${INPUT_CLANG_TIDY_OPTIONS} ${FILE} -- ${FILE} " \
       ">> clang-tidy-report.txt"
 
     echo ""
     echo "CLang Format:"
-    CLANG_FORMAT_OPTIONS="--style=LLVM"
-    CLANG_FORMAT_OPTIONS+=" --sort-includes"
-    CLANG_FORMAT_OPTIONS+=" --Werror"
-    CLANG_FORMAT_OPTIONS+=" --dry-run"
-    if [[ -n ${INPUT_CLANG_FORMAT_OPTIONS} ]]; then
-      CLANG_FORMAT_OPTIONS="${INPUT_CLANG_FORMAT_OPTIONS}"
-    fi
-    eval "clang-format ${CLANG_FORMAT_OPTIONS} ${FILE} " \
+    eval "clang-format ${INPUT_CLANG_FORMAT_OPTIONS} ${FILE} " \
       "|| echo \"File: ${FILE} not formatted!\" >> clang-format-report.txt"
-  done < committed_files.txt
+  done < source_code_files.txt
 
   echo ""
   echo "=== Install optional packages  ==="
@@ -149,40 +102,20 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
 
   echo ""
   echo "=== Performing CPP Check check up ==="
-  CPPCHECK_OPTIONS="--language=c"
-  CPPCHECK_OPTIONS+=" --std=c11"
-  CPPCHECK_OPTIONS+=" --platform=unix64"
-  CPPCHECK_OPTIONS+=" --library=boost.cfg"
-  CPPCHECK_OPTIONS+=" --library=cppcheck-lib.cfg"
-  CPPCHECK_OPTIONS+=" --library=cppunit.cfg"
-  CPPCHECK_OPTIONS+=" --library=gnu.cfg"
-  CPPCHECK_OPTIONS+=" --library=libcerror.cfg"
-  CPPCHECK_OPTIONS+=" --library=posix.cfg"
-  CPPCHECK_OPTIONS+=" --library=std.cfg"
-  CPPCHECK_OPTIONS+=" --enable=all"
-  CPPCHECK_OPTIONS+=" --inconclusive"
-  CPPCHECK_OPTIONS+=" --force"
-  CPPCHECK_OPTIONS+=" --max-ctu-depth=1000000"
-  CPPCHECK_OPTIONS+=" --template='----------\n{file}\nMessage: {message}\n  Check: {severity} -> {id}\n  Stack: {callstack}\n   Line: {line}:{column}\n{code}\n'"
-  CPPCHECK_OPTIONS+=" --template-location='----------\n{file}\nNote: {info}\nLine: {line}:{column}\n{code}\n'"
-  CPPCHECK_OPTIONS+=" --project=build/compile_commands.json"
-  if [[ -n ${INPUT_CPPCHECK_OPTIONS} ]]; then
-    CPPCHECK_OPTIONS="${INPUT_CPPCHECK_OPTIONS}"
-  fi
-  eval "cppcheck ${CPPCHECK_OPTIONS} 2> cppcheck-full-report.txt"
+  eval "cppcheck ${INPUT_CPPCHECK_OPTIONS} 2> cppcheck-full-report.txt"
 
   sed --in-place -z "s|${PWD}/||g" cppcheck-full-report.txt
 
   while IFS= read -r FILE; do
     echo ""
     echo "FILE: ${FILE}"
-    if [[ ! ${FILE,,} =~ ${C_EXTENSIONS} ]]; then
+    if [[ ! ${FILE,,} =~ ${INPUT_C_EXTENSIONS} ]]; then
       continue
     fi
     echo "NOTICE: Added the reference check for '${FILE}' into the report."
     grep -Poz "(?s)----------\n${FILE}.+?(?>\n\n)" cppcheck-full-report.txt >> cppcheck-report.txt
-  done < committed_files.txt
-  rm -f committed_files.txt
+  done < source_code_files.txt
+  rm -f source_code_files.txt
 
   echo ""
   echo "=== Set payloads per package ==="

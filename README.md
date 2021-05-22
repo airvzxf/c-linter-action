@@ -37,6 +37,7 @@ jobs:
 
 Option | Description | Required | Type | Default | Example
 ---    | ---         | ---      | ---  | ---     | ---
+scan_full_project | Scan full project. [Reference](#scan_full_project). | No | String | false | true
 project_path | Source code directory. [Reference](#project_path). | No | String | . | src
 build_type | Build type. [Reference](#build_type). | No | String | Release | Debug
 c_extensions | File extensions for C/C++. | No | String | [Reference](#c_extensions) | .c$&#x7c;.h$&#x7c;.zpp$
@@ -46,6 +47,13 @@ cppcheck_options | Options for CPP Check. | No | String | [Reference](#cppcheck_
 install_packages | Install extra package. [Reference](#install_packages). | No | String |  | libmemcached
 
 ### Settings review
+
+#### scan_full_project
+
+---
+
+It usually checks the quality code from the committed files, if you want to scan and provide report for all the project,
+please set this option to `true`.
 
 #### project_path
 

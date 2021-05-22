@@ -7,6 +7,10 @@ branding:
   icon: activity
   color: green
 inputs:
+  scan_full_project:
+    description: 'Scan full project, not only the committed files.'
+    required: false
+    default: 'false'
   project_path:
     description: 'Project Directory.'
     required: false
@@ -18,19 +22,45 @@ inputs:
   c_extensions:
     description: 'File extensions for C/C++.'
     required: false
-    default: ''
+    default: >
+      .c$|.cc$|.cp$|.cpp$|.cu$|.cuh$|.cx$|.cxx$|.h$|.hh$|.hp$|.hpp$|.hx$|.hxx$
   clang_tidy_options:
     description: 'Additional options of CLang Tidy.'
     required: false
-    default: ''
+    default: >-
+      --format-style=llvm
+      --warnings-as-errors=*
+      --header-filter=.*
+      --checks=*
   clang_format_options:
     description: 'Additional options of CLang Format.'
     required: false
-    default: ''
+    default: >-
+      --style=LLVM
+      --sort-includes
+      --Werror
+      --dry-run
   cppcheck_options:
     description: 'Additional options of CPP Check.'
     required: false
-    default: '--enable=warning'
+    default: >-
+      --language=c
+      --std=c11
+      --platform=unix64
+      --library=boost.cfg
+      --library=cppcheck-lib.cfg
+      --library=cppunit.cfg
+      --library=gnu.cfg
+      --library=libcerror.cfg
+      --library=posix.cfg
+      --library=std.cfg
+      --enable=all
+      --inconclusive
+      --force
+      --max-ctu-depth=1000000
+      --template="----------\n{file}\nMessage: {message}\n  Check: {severity} -> {id}\n  Stack: {callstack}\n   Line: {line}:{column}\n{code}\n"
+      --template-location="----------\n{file}\nNote: {info}\nLine: {line}:{column}\n{code}\n"
+      --project=build/compile_commands.json
   install_packages:
     description: 'Install extra package to compile your code inside of this action.'
     required: false
