@@ -51,6 +51,22 @@ if [[ ${GITHUB_EVENT_NAME} == "push" ]]; then
   git status
 
   echo ""
+  echo "=== Get files pushed except the deleted ==="
+  git rev-list --remotes | head -n 20
+
+  echo ""
+  echo "=== Get files pushed except the deleted ==="
+  git rev-list --all --remotes --pretty | head -n 40
+
+  echo ""
+  echo "=== Get files pushed except the deleted ==="
+  git reflog | head -n 20
+
+  echo ""
+  echo "=== Get files pushed except the deleted ==="
+  git log | head -n 40
+
+  echo ""
   echo "=== Get files pushed except the deleted #1 ==="
   echo "git diff --name-only --diff-filter=ACdMRTUXB ${GITHUB_HEAD_COMMIT} ${GITHUB_LAST_COMMIT}"
 
@@ -86,7 +102,7 @@ if [[ -f committed_files.txt ]]; then
   echo ""
   echo "=== Validate committed files ==="
   echo "NOTICE: Not found any file to process."
-  return 0
+  exit 0
 fi
 
 echo ""
