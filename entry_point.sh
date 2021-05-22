@@ -40,53 +40,20 @@ if [[ ${GITHUB_EVENT_NAME} == "push" ]]; then
   echo "=== GitHub Event: Push ==="
 
   echo ""
-  echo "=== Get commits from head to the last ==="
-  GITHUB_COMMITS_ID=$(jq -r '.commits | .[].id' "${GITHUB_EVENT_PATH}")
+  echo "=== Get commits on this push ==="
+  GITHUB_COMMITS_ID=$(jq -r '.commits[] | .id' "${GITHUB_EVENT_PATH}")
   echo "GITHUB_COMMITS_ID: ${GITHUB_COMMITS_ID}"
 
   echo ""
-  echo "=== Get commits from head to the last ==="
+  echo "=== Get files per commit ==="
   for GITHUB_COMMIT_ID in ${GITHUB_COMMITS_ID}; do
     echo "GITHUB_COMMIT_ID: ${GITHUB_COMMIT_ID}"
-    curl "https://api.github.com/repos/airvzxf/bose-connect-app-linux/commits/${GITHUB_COMMIT_ID}" > commit.json
-    GITHUB_COMMITS_FILES=$(jq -r '.files | .[].filename' commit.json)
-    echo "GITHUB_COMMITS_FILES: ${GITHUB_COMMITS_FILES}"
+    curl --silent \
+      "https://api.github.com/repos/airvzxf/bose-connect-app-linux/commits/${GITHUB_COMMIT_ID}" \
+      > commit.json
+    jq -r '.files[] | select(.status != "deleted") | .filename' commit.json >> committed_files.txt
     rm -f commit.json
   done
-
-  echo ""
-  echo "=== Get files pushed except the deleted ==="
-  git status
-
-  echo ""
-  echo "=== Get files pushed except the deleted ==="
-  git rev-list --remotes | head -n 20
-
-  echo ""
-  echo "=== Get files pushed except the deleted ==="
-  git rev-list --all --remotes --pretty | head -n 40
-
-  echo ""
-  echo "=== Get files pushed except the deleted ==="
-  git reflog | head -n 20
-
-  echo ""
-  echo "=== Get files pushed except the deleted ==="
-  git log | head -n 40
-
-  echo ""
-  echo "=== Get files pushed except the deleted #1 ==="
-  echo "git diff --name-only --diff-filter=ACdMRTUXB ${GITHUB_HEAD_COMMIT} ${GITHUB_LAST_COMMIT}"
-
-  echo ""
-  echo "=== Get files pushed except the deleted #2 ==="
-  git diff --name-only --diff-filter=ACdMRTUXB "${GITHUB_HEAD_COMMIT}" "${GITHUB_LAST_COMMIT}"
-
-  echo ""
-  echo "=== Get files pushed except the deleted #3 ==="
-  git diff --name-only --diff-filter=ACdMRTUXB \
-    "${GITHUB_HEAD_COMMIT}" "${GITHUB_LAST_COMMIT}" \
-    > committed_files.txt
 fi
 
 if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
@@ -100,7 +67,7 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
 
   echo ""
   echo "=== Get committed files ==="
-  curl "${GITHUB_FILES_JSON}" > github_files.json
+  curl --silent "${GITHUB_FILES_JSON}" > github_files.json
   FILES_LIST=$(jq -r '.[].filename' github_files.json)
   echo "${FILES_LIST}" > committed_files.txt
   rm -f github_files.json
@@ -114,11 +81,29 @@ if [[ -f committed_files.txt ]]; then
 fi
 
 echo ""
+echo "=== Get unique files ==="
+mv committed_files.txt unsorted_files.txt
+sort unsorted_files.txt | uniq > unique_files.txt
+rm -f unsorted_files.txt
+
+echo ""
+echo "=== Get existed files ==="
+while IFS= read -r FILE; do
+  echo "FILE: ${FILE}"
+  if [[ ! -f ${FILE} ]]; then
+    echo "NOTICE: The file not exists in this directory."
+    continue
+  fi
+  echo "${FILE}" >> committed_files.txt
+done < unique_files.txt
+rm -f unique_files.txt
+
+echo ""
 echo "=== List file committed_files.txt ==="
 ls -lha committed_files.txt
 
 echo ""
-echo "committed_files.txt"
+echo "=== Display committed_files.txt ==="
 cat committed_files.txt
 
 echo ""
