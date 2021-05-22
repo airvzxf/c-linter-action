@@ -37,8 +37,20 @@ if [[ ${INPUT_SCAN_FULL_PROJECT} == "true" ]]; then
   rm -f source_code_files.txt
 fi
 
+echo ""
+echo "-------------- v1.0.1 --------------"
 if [[ ${GITHUB_EVENT_NAME} == "push" ]]; then
   echo "TODO: Needs to add the code to scan when the GitHub event is pushed."
+
+  echo ""
+  echo "=== X1 ==="
+  cat "${GITHUB_EVENT_PATH}"
+
+#  echo ""
+#  echo "=== Get committed files in JSON format ==="
+#  GITHUB_FILES_JSON=$(jq -r '.pull_request._links.self.href' "${GITHUB_EVENT_PATH}")/files
+#  echo "GitHub files in JSON: ${GITHUB_FILES_JSON}"
+
   exit 0
 fi
 
