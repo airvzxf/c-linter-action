@@ -40,6 +40,18 @@ if [[ ${GITHUB_EVENT_NAME} == "push" ]]; then
   echo "=== GitHub Event: Push ==="
 
   echo ""
+  echo "=== GITHUB_EVENT_PATH ==="
+  cat "${GITHUB_EVENT_PATH}"
+
+  echo ""
+  echo "=== GITHUB_EVENT_PATH ==="
+  ls -lhaR "${GITHUB_EVENT_PATH}"/../
+
+  echo ""
+  echo "=== GITHUB_EVENT_PATH ==="
+  ls -lhaR "${GITHUB_EVENT_PATH}"/../../
+
+  echo ""
   echo "=== Get commits from head to the last ==="
   GITHUB_HEAD_COMMIT=$(jq -r '.after' "${GITHUB_EVENT_PATH}")
   GITHUB_LAST_COMMIT=$(jq -r '.before' "${GITHUB_EVENT_PATH}")
