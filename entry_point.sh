@@ -45,11 +45,7 @@ if [[ ${GITHUB_EVENT_NAME} == "push" ]]; then
 
   echo ""
   echo "=== GITHUB_EVENT_PATH ==="
-  ls -lhaR "${GITHUB_EVENT_PATH}"/../
-
-  echo ""
-  echo "=== GITHUB_EVENT_PATH ==="
-  ls -lhaR "${GITHUB_EVENT_PATH}"/../../
+  ls -lhaR /github/workflow/
 
   echo ""
   echo "=== Get commits from head to the last ==="
