@@ -2,12 +2,15 @@
 
 echo ""
 echo "=== Environment variables ==="
-echo "INPUT_PROJECT_PATH:      ${INPUT_PROJECT_PATH}"
-echo "INPUT_CHECK_ALL_FILES:   ${INPUT_CHECK_ALL_FILES}"
-echo "GITHUB_EVENT_NAME:       ${GITHUB_EVENT_NAME}"
-echo "INPUT_CPPCHECK_OPTIONS:  ${INPUT_CPPCHECK_OPTIONS}"
-echo "INPUT_BUILD_TYPE:        ${INPUT_BUILD_TYPE}"
-echo "INPUT_INSTALL_PACKAGES:  ${INPUT_INSTALL_PACKAGES}"
+echo "INPUT_SCAN_FULL_PROJECT:    ${INPUT_SCAN_FULL_PROJECT}"
+echo "INPUT_PROJECT_PATH:         ${INPUT_PROJECT_PATH}"
+echo "INPUT_BUILD_TYPE:           ${INPUT_BUILD_TYPE}"
+echo "INPUT_C_EXTENSIONS:         ${INPUT_C_EXTENSIONS}"
+echo "INPUT_CLANG_TIDY_OPTIONS:   ${INPUT_CLANG_TIDY_OPTIONS}"
+echo "INPUT_CLANG_FORMAT_OPTIONS: ${INPUT_CLANG_FORMAT_OPTIONS}"
+echo "INPUT_CPPCHECK_OPTIONS:     ${INPUT_CPPCHECK_OPTIONS}"
+echo "INPUT_INSTALL_PACKAGES:     ${INPUT_INSTALL_PACKAGES}"
+echo "GITHUB_EVENT_NAME:          ${GITHUB_EVENT_NAME}"
 
 if [[ ${INPUT_CHECK_ALL_FILES} == "true" ]]; then
   echo ""
@@ -89,8 +92,11 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
   echo ""
   echo "=== Performing CLang check up ==="
   C_EXTENSIONS=$(
-    echo -n \\.c{,c,p,pp,u,uh,x,xx}"$|" \\.h{,h,p,pp,x,xx}"$|" | sed -E 's/ //g;s/\|$//g'
+    echo -n .c{,c,p,pp,u,uh,x,xx}"$|" .h{,h,p,pp,x,xx}"$|" | sed -E 's/ //g;s/\|$//g'
   )
+  if [[ -n ${INPUT_C_EXTENSIONS} ]]; then
+    C_EXTENSIONS="${INPUT_C_EXTENSIONS}"
+  fi
 
   while IFS= read -r FILE; do
     echo ""
@@ -102,30 +108,31 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
 
     echo ""
     echo "CLang Tidy:"
-    clang-tidy \
-      --format-style=llvm \
-      --warnings-as-errors=* \
-      --header-filter=.* \
-      --checks=* \
-      "${FILE}" -- "${FILE}" \
-      >> clang-tidy-report.txt
+    CLANG_TIDY_OPTIONS="--format-style=llvm"
+    CLANG_TIDY_OPTIONS+=" --warnings-as-errors=*"
+    CLANG_TIDY_OPTIONS+=" --header-filter=.*"
+    CLANG_TIDY_OPTIONS+=" --checks=*"
+    if [[ -n ${INPUT_CLANG_TIDY_OPTIONS} ]]; then
+      CLANG_TIDY_OPTIONS="${INPUT_CLANG_TIDY_OPTIONS}"
+    fi
+    eval "clang-tidy ${CLANG_TIDY_OPTIONS} ${FILE} -- ${FILE} " \
+      ">> clang-tidy-report.txt"
 
     echo ""
     echo "CLang Format:"
-    clang-format \
-      --style=LLVM \
-      --sort-includes \
-      --Werror \
-      --dry-run \
-      "${FILE}" \
-      || echo "File: ${FILE} not formatted!" \
-        >> clang-format-report.txt
+    CLANG_FORMAT_OPTIONS="--style=LLVM"
+    CLANG_FORMAT_OPTIONS+=" --sort-includes"
+    CLANG_FORMAT_OPTIONS+=" --Werror"
+    CLANG_FORMAT_OPTIONS+=" --dry-run"
+    if [[ -n ${INPUT_CLANG_FORMAT_OPTIONS} ]]; then
+      CLANG_FORMAT_OPTIONS="${INPUT_CLANG_FORMAT_OPTIONS}"
+    fi
+    eval "clang-format ${CLANG_FORMAT_OPTIONS} ${FILE} " \
+      "|| echo \"File: ${FILE} not formatted!\" >> clang-format-report.txt"
   done < committed_files.txt
 
   echo ""
   echo "=== Install optional packages  ==="
-  # TODO: Needs to add this parameter in the Action
-  INPUT_INSTALL_PACKAGES="libbluetooth-dev"
   if [[ -n ${INPUT_INSTALL_PACKAGES} ]]; then
     apt --assume-yes install "${INPUT_INSTALL_PACKAGES}"
   fi
@@ -133,8 +140,6 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
   echo ""
   echo "=== Build the application ==="
   rm -fR build
-  # TODO: Add this variable as argument in the action.
-  INPUT_BUILD_TYPE="Release"
   cmake \
     -S "${INPUT_PROJECT_PATH}" \
     -B build \
@@ -144,25 +149,27 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
 
   echo ""
   echo "=== Performing CPP Check check up ==="
-  cppcheck \
-    --language=c \
-    --std=c11 \
-    --platform=unix64 \
-    --library=boost.cfg \
-    --library=cppcheck-lib.cfg \
-    --library=cppunit.cfg \
-    --library=gnu.cfg \
-    --library=libcerror.cfg \
-    --library=posix.cfg \
-    --library=std.cfg \
-    --enable=all \
-    --inconclusive \
-    --force \
-    --max-ctu-depth=1000000 \
-    --template="----------\n{file}\nMessage: {message}\n  Check: {severity} -> {id}\n  Stack: {callstack}\n   Line: {line}:{column}\n{code}\n" \
-    --template-location="----------\n{file}\nNote: {info}\nLine: {line}:{column}\n{code}\n" \
-    --project=build/compile_commands.json \
-    2> cppcheck-full-report.txt
+  CPPCHECK_OPTIONS="--language=c"
+  CPPCHECK_OPTIONS+=" --std=c11"
+  CPPCHECK_OPTIONS+=" --platform=unix64"
+  CPPCHECK_OPTIONS+=" --library=boost.cfg"
+  CPPCHECK_OPTIONS+=" --library=cppcheck-lib.cfg"
+  CPPCHECK_OPTIONS+=" --library=cppunit.cfg"
+  CPPCHECK_OPTIONS+=" --library=gnu.cfg"
+  CPPCHECK_OPTIONS+=" --library=libcerror.cfg"
+  CPPCHECK_OPTIONS+=" --library=posix.cfg"
+  CPPCHECK_OPTIONS+=" --library=std.cfg"
+  CPPCHECK_OPTIONS+=" --enable=all"
+  CPPCHECK_OPTIONS+=" --inconclusive"
+  CPPCHECK_OPTIONS+=" --force"
+  CPPCHECK_OPTIONS+=" --max-ctu-depth=1000000"
+  CPPCHECK_OPTIONS+=" --template='----------\n{file}\nMessage: {message}\n  Check: {severity} -> {id}\n  Stack: {callstack}\n   Line: {line}:{column}\n{code}\n'"
+  CPPCHECK_OPTIONS+=" --template-location='----------\n{file}\nNote: {info}\nLine: {line}:{column}\n{code}\n'"
+  CPPCHECK_OPTIONS+=" --project=build/compile_commands.json"
+  if [[ -n ${INPUT_CPPCHECK_OPTIONS} ]]; then
+    CPPCHECK_OPTIONS="${INPUT_CPPCHECK_OPTIONS}"
+  fi
+  eval "cppcheck ${CPPCHECK_OPTIONS} 2> cppcheck-full-report.txt"
 
   sed --in-place -z "s|${PWD}/||g" cppcheck-full-report.txt
 
@@ -172,7 +179,7 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
     if [[ ! ${FILE,,} =~ ${C_EXTENSIONS} ]]; then
       continue
     fi
-    echo "NOTICE: Added the reference file '${FILE}' into the report."
+    echo "NOTICE: Added the reference check for '${FILE}' into the report."
     grep -Poz "(?s)----------\n${FILE}.+?(?>\n\n)" cppcheck-full-report.txt >> cppcheck-report.txt
   done < committed_files.txt
   rm -f committed_files.txt
@@ -261,6 +268,7 @@ if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
   echo "=== Error message: Generate the payload ==="
   {
     echo "😢 Sorry, your code did not pass the quality scanners."
+    echo "For more information visit: https://github.com/airvzxf/c-linter-action/#readme"
     echo ""
     # shellcheck disable=SC2016
     echo 'The `bot` will comment below the errors and how you can check or fix they in your local.'

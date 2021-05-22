@@ -11,10 +11,30 @@ inputs:
     description: 'Project Directory.'
     required: false
     default: '.'
+  build_type:
+    description: 'Build type.'
+    required: false
+    default: 'Release'
+  c_extensions:
+    description: 'File extensions for C/C++.'
+    required: false
+    default: ''
+  clang_tidy_options:
+    description: 'Additional options of CLang Tidy.'
+    required: false
+    default: ''
+  clang_format_options:
+    description: 'Additional options of CLang Format.'
+    required: false
+    default: ''
   cppcheck_options:
-    description: 'Additional cppcheck options.'
+    description: 'Additional options of CPP Check.'
     required: false
     default: '--enable=warning'
+  install_packages:
+    description: 'Install extra package to compile your code inside of this action.'
+    required: false
+    default: ''
 runs:
   using: 'docker'
   image: 'Dockerfile'
