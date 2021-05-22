@@ -135,6 +135,8 @@ while IFS= read -r FILE; do
     "|| echo \"File: ${FILE} not formatted!\" >> clang-format-report.txt"
 done < source_code_files.txt
 
+sed --in-place -z "s|${PWD}/||g" clang-tidy-report.txt
+
 echo ""
 echo "=== Install optional packages  ==="
 if [[ -n ${INPUT_INSTALL_PACKAGES} ]]; then
