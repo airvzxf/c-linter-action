@@ -230,6 +230,11 @@ cppcheck \
   --language=c \
   --std=c11 \
   --platform=unix64 \
+  --suppress=missingIncludeSystem \
+  --enable=all \
+  --inconclusive \
+  --force \
+  --max-ctu-depth=1000000 \
   --library=boost.cfg \
   --library=cppcheck-lib.cfg \
   --library=cppunit.cfg \
@@ -237,11 +242,7 @@ cppcheck \
   --library=libcerror.cfg \
   --library=posix.cfg \
   --library=std.cfg \
-  --enable=all \
-  --inconclusive \
-  --force \
-  --max-ctu-depth=1000000 \
-  --template="----------\n{file}\nMessage: {message}\n  Check: {severity} -> {id}\n  Stack: {callstack}\n   Line: {line}:{column}\n{code}\n" \
+  --template="----------\n{file}\nMessage: {message}\n  Check: CWE-{cwe} [{severity} -> {id}]\n  Stack: {callstack}\n   Line: {line}:{column}\n{code}\n" \
   --template-location="----------\n{file}\nNote: {info}\nLine: {line}:{column}\n{code}\n" \
   --project=build/compile_commands.json \
   2> cppcheck-full-report.txt
