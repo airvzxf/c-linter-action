@@ -242,8 +242,8 @@ cppcheck \
   --library=libcerror.cfg \
   --library=posix.cfg \
   --library=std.cfg \
-  --template="----------\n{file}\nMessage: {message}\n  Check: CWE-{cwe} [{severity} -> {id}]\n  Stack: {callstack}\n   Line: {line}:{column}\n{code}\n" \
-  --template-location="----------\n{file}\nNote: {info}\nLine: {line}:{column}\n{code}\n" \
+  --template="----------\n{file}:{line}\nMessage: {message}\n  Check: CWE-{cwe} [{severity} -> {id}]\n  Stack: {callstack}\n   Line: {line}:{column}\n{code}\n" \
+  --template-location="----------\n{file}:{line}\nNote: {info}\nLine: {line}:{column}\n{code}\n" \
   --project=build/compile_commands.json \
   2> cppcheck-full-report.txt
 ```
